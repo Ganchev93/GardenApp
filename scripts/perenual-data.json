@@ -1,0 +1,380 @@
+[
+  {
+    "id": 1,
+    "name": "Домат",
+    "found": true,
+    "perenual_id": 2292,
+    "scientific_name": "Cyphomandra betacea",
+    "watering_general": null,
+    "sunlight": "",
+    "cycle": "",
+    "care_watering": "Tree tomato should be watered deeply and thoroughly about once a week during the growing season. In summer, the plant may need to be watered more frequently when the weather is particularly hot and dry. In winter, the water requirements of the tree tomato can be reduced to around once every 2 weeks. Soil should be kept moist but not wet; if it continually remains wet, the plant is vulnerable to certain fungal diseases. When watering, check that the soil is completely saturated and that the water is able to freely drain out of the bottom of the pot.",
+    "care_fertilizing": "",
+    "care_pruning": "Tree tomatoes should be pruned just before they start fruiting. Pruning is done by selectively removing any crossing branches, branches that extend away from the main stem, and any leaves and fruit that is infected or disease-prone. Generally, only about 20% of the total canopy should be pruned. The branches should be pruned close to the main stem, and cutting just above or below the node is recommended. Pruning helps to promote growth, and should be done when the tree is in an active growth cycle, which is usually in spring or early summer. Pruning before fruiting also helps to increase the amount of fruit produced."
+  },
+  {
+    "id": 2,
+    "name": "Краставица",
+    "found": true,
+    "perenual_id": 2251,
+    "scientific_name": "Cucumis sativus",
+    "watering_general": null,
+    "sunlight": "",
+    "cycle": "",
+    "care_watering": "Cucumbers (Cucumis sativus) require an even amount of water throughout the growing season. The best way to water cucumber plants is to provide a thorough and deep watering once a week. During hot and dry weather, you may need to water your cucumber plants more often to keep the soil moist. Your cucumber plants will need to be watered more during fruiting season as cucumbers require a lot of water. Make sure you water your cucumbers earlier in the day so that the leaves can dry before evening.",
+    "care_fertilizing": "",
+    "care_pruning": "Pruning cucumber plants (Cucumis sativus) should be done at least once during their growing season. The best time for pruning is when they become mature, after the first flush of new growth has begun to appear. Pruning should occur in the early morning when the leaves are dry and the plant is not in a state of active growth. \n\nThe amount of pruning to be done will depend on the size of the cucumber plant and the vigor of its growth. For young plants, pruning is not needed to shape the canopy, as the plant is still forming foliage. Generally, mature cucumber plants should be pruned every 2-3 weeks, taking out old, worn out foliage as well as side stems and stalks that may be crossing each other or competing for space. To maximize fruit yields, pruning should occur no more than half way up the vine, as this will maximize light and air circulation to the fruits. \n\n"
+  },
+  {
+    "id": 3,
+    "name": "Морков",
+    "found": true,
+    "perenual_id": 2320,
+    "scientific_name": "Daucus carota var. sativus",
+    "watering_general": null,
+    "sunlight": "",
+    "cycle": "",
+    "care_watering": "Carrots thrive in well-drained, loose soil. For optimal growth, water 1-2 times per week when the soil is dry to the touch. When watering, deeply soak the soil so that it is moist to a depth of 4-5 inches. Be very careful not to over-water. Too much water can lead to rotting roots, fungal growth, and even stunted growth. Rotate when and how you water your carrots, as wetter and drier cycles can help to encourage root formation.",
+    "care_fertilizing": "",
+    "care_pruning": "The best time for pruning carrots is when the leaves become top-heavy or when they start to crowd out 1 another. The amount of pruning depends on the density of the planting. You should prune off the top half of the foliage to thin the plants to 1 plant per 4-6 inches of row. This will help to provide better air circulation and sun exposure as well as allowing for better development of the carrot’s root. Pruning should be done as often as necessary to maintain the desired spacing. A light pruning of the foliage in the springtime can also help to encourage quicker growth and larger yields"
+  },
+  {
+    "id": 4,
+    "name": "Картоф",
+    "found": false,
+    "error": "Unexpected token 'P', \"Please Upg\"... is not valid JSON"
+  },
+  {
+    "id": 5,
+    "name": "Чушка",
+    "found": true,
+    "perenual_id": 1602,
+    "scientific_name": "Capsicum annuum 'Park's Early Thickset'",
+    "watering_general": null,
+    "sunlight": "",
+    "cycle": "",
+    "care_watering": "Sweet bell pepper plants (Capsicum annuum 'Park's Early Thickset') do best when they receive regular, consistent watering. Aim to give your plants 1-2 inches of water per week, either from rainfall or a watering can.Water your peppers early in the morning, so they have time to dry before nightfall. Avoid getting the foliage wet as much as possible since wet foliage can lead to diseases. If you are growing your peppers in containers, monitor the soil moisture and adjust your watering as needed. The soil should be evenly moist but not soggy.",
+    "care_fertilizing": "",
+    "care_pruning": "Pruning sweet bell peppers (Capsicum annuum 'Park's Early Thickset') should begin once the plant is established and the main stem is about a foot long. Generally, the plant should be pruned around 2-3 times a year. The process includes removing any stalks or branches that appear frail, weak, or lacking in leaves or stems. This helps stimulate new growth and encourages more fruit production. It is also recommended to remove any stems or limbs that have reached the top of the canopy, as this will allow for more airflow and sunlight to the lower parts of the plant. When pruning, be sure not to remove more than ⅔ of the foliage, as this can negatively affect growth."
+  },
+  {
+    "id": 6,
+    "name": "Лук",
+    "found": true,
+    "perenual_id": 663,
+    "scientific_name": "Allium altaicum",
+    "watering_general": null,
+    "sunlight": "",
+    "cycle": "",
+    "care_watering": "Onion (Allium altaicum) requires regular watering to flourish. Aim to water the plant deeply about once or twice a week. During hot, dry weather, water the onion more often to ensure that the soil does not become too dry. During the cooler months, decrease the frequency of watering - only provide as much as the onion needs. Soil should remain moist but not soggy. Make sure to check the soil every few days to ensure it has not dried out more quickly than expected.",
+    "care_fertilizing": "",
+    "care_pruning": "Onion (Allium altaicum) should be pruned once a year in late summer or early fall. Pruning should be done carefully, as onion plants can be sensitive to pruning. Cut off the leaves that are yellowing or dead and thin out any crossed or overlapping branches. This will help encourage new growth and promote a healthier plant. Additionally, thinning-out overgrown plants will help keep the harvesting manageable. Although onion plants are hardy, they don't require heavy pruning. So, it's best to limit each pruning event to a few branches and leaves to avoid over-pruning and damaging the plant."
+  },
+  {
+    "id": 7,
+    "name": "Патладжан",
+    "found": false,
+    "error": "Unexpected token 'P', \"Please Upg\"... is not valid JSON"
+  },
+  {
+    "id": 8,
+    "name": "Тиквичка",
+    "found": true,
+    "perenual_id": 2255,
+    "scientific_name": "Cucurbita pepo",
+    "watering_general": null,
+    "sunlight": "",
+    "cycle": "",
+    "care_watering": "Summer squash (Cucurbita pepo) should be watered deeply and regularly, about once per week or as the soil dries out. It is important to water in the morning so the leaves of the plant can absorb the water during the day and the soil can dry out completely before nightfall. During periods of extended dry weather or extreme heat, additional watering may be required. It is better to water more often for shorter periods of time rather than infrequently and for longer periods.",
+    "care_fertilizing": "",
+    "care_pruning": "For summer squash (Cucurbita pepo), you should prune lightly throughout the season to prevent overcrowding of the vines. Start pruning when the plants have 4 to 6 leaves. To encourage bushier plants, pinch off the growing tips of the main stem and lateral vines when they reach 12-18 in (30-46 cm) in length. Prune off any dead or yellowed leaves, along with any growing tips that have grown past the maximum length. To keep your summer squash harvest going longer, remove any flowers that appear after 8 weeks. Overall, prune regularly throughout the growing season for bushier growth, better air circulation and increased yields."
+  },
+  {
+    "id": 9,
+    "name": "Зеле",
+    "found": true,
+    "perenual_id": 235,
+    "scientific_name": "Cordyline australis 'Torbay Dazzler'",
+    "watering_general": null,
+    "sunlight": "",
+    "cycle": "",
+    "care_watering": "For best results, Torbay Dazzler Grass Palms should be watered thoroughly and deeply twice per week. During the summer months, when the plant is actively growing, increase watering to 3 times per week. It is most important to water the plant in the mornings to allow the foliage to dry in the sunshine before evening, as it is particularly susceptible to foliar fungal diseases. On days when no rainfall is present, be sure to provide the additional water needed for the plant. During the winter months, reduce watering to once per week, or even every other week if the air is dry. ",
+    "care_fertilizing": "",
+    "care_pruning": "For Torbay Dazzler Grass Palm, pruning should usually be done once a year in late spring to early summer. Pruning consists of cutting off any dead or discolored leaves and any stems that have grown too long. Be sure to wear protective gloves as the palm can be somewhat spiky. Depending on the age of the plant, only remove a small amount of growth at a time - about 10-20%. You may also want to shape the palm by trimming off the longer, more disproportionate stems."
+  },
+  {
+    "id": 10,
+    "name": "Спанак",
+    "found": true,
+    "perenual_id": 1144,
+    "scientific_name": "Atriplex hortensis",
+    "watering_general": null,
+    "sunlight": "",
+    "cycle": "",
+    "care_watering": "Since mountain spinach is a hardy, drought tolerant species, it doesn’t require a great amount of water. Water should only be given when the soil is on the dry side and has no visible moisture. Watering can be done every 2 weeks during hot, dry weather to ensure the plant stays hydrated. In cooler, wetter weather, watering should be reduced to only if necessary every 4 weeks.",
+    "care_fertilizing": "",
+    "care_pruning": "Mountain spinach (Atriplex hortensis) should be pruned regularly throughout the growing season. Pruning helps to produce denser foliage and allows better light penetration, preventing overcrowding and promoting air circulation. Pruning is best done in the spring before new growth begins. Focus pruning efforts on removing any dead, diseased, or damaged growth. Additionally, prune back any excess or unruly branches and stems that extend beyond the desired shape and size of your plant. For a fuller look, pinch back growing tips for 3-4 weeks every spring to encourage new branches to form. Finally, lightly trim back any foliage that is looking tired. With regular pruning, Mountain spinach will develop a continuous display of fresh foliage throughout the growing season."
+  },
+  {
+    "id": 11,
+    "name": "Маруля",
+    "found": false,
+    "error": "Unexpected token 'P', \"Please Upg\"... is not valid JSON"
+  },
+  {
+    "id": 12,
+    "name": "Ягода",
+    "found": true,
+    "perenual_id": 181,
+    "scientific_name": "Arbutus 'Marina'",
+    "watering_general": null,
+    "sunlight": "",
+    "cycle": "",
+    "care_watering": "Watering a Marina Strawberry Tree should be done on a regular basis throughout the growing season. During its growing season, which is roughly between April and October, this tree should be watered 2 to 3 times a week.\n\nWater the plant until the soil is moist and be sure to water deeply so that the root system is watered thoroughly. During the winter, the tree should be watered every 2 weeks, but water the tree less in periods of cooler weather and less during the summer months when the soil will naturally be more moist.\n\nIt is important to make sure that the tree is not overwatered as this can lead to root rot and other diseases. A good way to ensure proper watering is to check the soil frequently and water when needed.",
+    "care_fertilizing": "",
+    "care_pruning": "Marina Strawberry Trees should be pruned twice a year, in spring and in late summer. In the spring, prune any damaged or dead wood, as well as crossing branches, suckers, and competing growth. The late summer pruning should remove any light suckers and reduce branch length to encourage flower bud formation and to increase air flow. Depending on the size of the tree, the amount of pruning should not exceed 1/3 - 1/2 of the total canopy. For smaller trees, prune lightly, removing no more than 1/3 of the canopy. For larger trees, 1/2 of the canopy can safely be removed without too much disruption to the overall structure."
+  },
+  {
+    "id": 13,
+    "name": "Ябълка",
+    "found": false
+  },
+  {
+    "id": 14,
+    "name": "Круша",
+    "found": false
+  },
+  {
+    "id": 15,
+    "name": "Череша",
+    "found": false,
+    "error": "Unexpected token 'P', \"Please Upg\"... is not valid JSON"
+  },
+  {
+    "id": 16,
+    "name": "Слива",
+    "found": false
+  },
+  {
+    "id": 17,
+    "name": "Праскова",
+    "found": false
+  },
+  {
+    "id": 18,
+    "name": "Кайсия",
+    "found": false
+  },
+  {
+    "id": 19,
+    "name": "Орех",
+    "found": false
+  },
+  {
+    "id": 20,
+    "name": "Лимон (саксия)",
+    "found": false
+  },
+  {
+    "id": 21,
+    "name": "Роза",
+    "found": true,
+    "perenual_id": 24,
+    "scientific_name": "Acer macrophyllum 'Mocha Rose'",
+    "watering_general": null,
+    "sunlight": "",
+    "cycle": "",
+    "care_watering": "The Mocha Rose Big Leaf Maple should be watered deeply once or twice a week, depending on the weather and the amount of sunlight it is receiving. Make sure to check the topsoil of the potted plant for moisture every few days. If the top layer of soil is dry, then it is time to water the plant. If the soil is still moist, then wait a few more days before attempting to water again. A general rule of thumb is to give the plant a deep watering session equivalent to 1-1.5 inches of water per week. Allow as much water to seep in as possible, and then let the soil dry out before watering again. If the plant is in direct sunlight, be sure to give it extra water to keep it from drying out.",
+    "care_fertilizing": "",
+    "care_pruning": "Pruning should take place in late winter or early spring after the last frost. Pruning should be done to maintain the desired size and shape of Mocha Rose Big Leaf Maple. Generally, light pruning should be all that is needed, unless dead or diseased branches need to be removed. Remove any branches that cross or are crowded and selectively thin the canopy slightly to promote air circulation and light penetration. Avoid over pruning as it can weaken and stunt the growth of the tree. Avoid removing more than 1/3 of the tree’s branches in a single pruning session. Overall, we recommend only light pruning for a Mocha Rose Big Leaf Maple."
+  },
+  {
+    "id": 22,
+    "name": "Хортензия",
+    "found": true,
+    "perenual_id": 303,
+    "scientific_name": "Hydrangea paniculata 'Grandiflora (tree form)'",
+    "watering_general": null,
+    "sunlight": "",
+    "cycle": "",
+    "care_watering": "Watering a tree form Pee Gee Hydrangea should be done regularly, but it should not be overly saturated. To keep the plant healthy and vibrant, water deeply about once a week during the summer months. During the winter months, when the plant is dormant, water sparingly. Soak the soil to a depth of at least 8-10 inches when thoroughly watering. Make sure to be careful not to let the water pool or sit on the foliage. Proper drainage is also important for this plant species, so make sure the soil is well-draining. The tree form Pee Gee Hydrangea should also be mulched in order to conserve moisture and prevent weeds.",
+    "care_fertilizing": "",
+    "care_pruning": "Pruning your Tree Form Pee Gee Hydrangea (Hydrangea paniculata 'Grandiflora (tree form)') should occur twice per year, once in the late winter (January or February) and then again in late summer (July or August). In late winter, remove any dead or diseased stems and do a general thinning of the branches, cutting them back to within about 12 inches of the ground. In late summer, prune the top of your tree form to maintain the desired shape and size. You can also remove any stem that grows too far out of the desired shape. Prune the outer edges of your Tree Form Pee Gee Hydrangea to keep a rounded shape. Be sure to prune selectively and not take too much off at once."
+  },
+  {
+    "id": 23,
+    "name": "Лавандула",
+    "found": true,
+    "perenual_id": 677,
+    "scientific_name": "Allium 'Lavender Bubbles'",
+    "watering_general": null,
+    "sunlight": "",
+    "cycle": "",
+    "care_watering": "For an ornamental onion (Allium 'Lavender Bubbles'), water 1-2 inches per week either in the morning or the afternoon. Make sure to water deeply so that the soil is completely saturated, then wait for the soil to dry out before watering again. Since this type of onion prefers dryer soil, it is important to avoid overwatering. Feel the soil to make sure it is dry a few inches down the soil before giving it a good soak. During very hot or dry periods, you can increase the amount of water to about 2 inches per week.",
+    "care_fertilizing": "",
+    "care_pruning": "Ornamental onion (Allium 'Lavender Bubbles') should be pruned to keep its appearance attractive. The best time to prune is in early- to mid-spring whenever new growth appears, before the onion blooms. Use a pair of sharp, sterile clippers or scissors to remove dead or diseased foliage. Additionally, cut off any flower stalks that have finished flowering, and then cut the foliage back to about half its normal size. This will help prevent the plant from becoming overly crowded and encourage more blooms."
+  },
+  {
+    "id": 24,
+    "name": "Боровинка",
+    "found": true,
+    "perenual_id": 277,
+    "scientific_name": "Elaeocarpus decipiens",
+    "watering_general": null,
+    "sunlight": "",
+    "cycle": "",
+    "care_watering": "Japanese Blueberry Tree should be watered deeply and thoroughly once every 7-14 days during the summer months when temperatures are higher. It should be watered less frequently in the winter. When watering, give the root system of the tree an inch of water at each watering. Be sure to avoid over-watering as this can cause root rot or other fungal diseases. Soils that are moist but well draining are the best for this plant species.",
+    "care_fertilizing": "",
+    "care_pruning": "Pruning of the Japanese Blueberry Tree is usually done in late fall or early winter (early November to February in most climates) when the tree is dormant. Pruning should be done judiciously and with an eye toward the desired shape of the tree. Large limbs should be removed first, then branches that are diseased or interfering with the desired shape of the tree. If there is an excessive amount of regrowth, generally no more than 25% of the total tree should be pruned in 1 year for most species. Additionally, it is important to make sure each pruning cut is made cleanly and flush with the trunk or another limb."
+  },
+  {
+    "id": 25,
+    "name": "Касис",
+    "found": false,
+    "error": "Unexpected token 'P', \"Please Upg\"... is not valid JSON"
+  },
+  {
+    "id": 26,
+    "name": "Малина",
+    "found": true,
+    "perenual_id": 595,
+    "scientific_name": "Agastache 'Raspberry Summer'",
+    "watering_general": null,
+    "sunlight": "",
+    "cycle": "",
+    "care_watering": "Giant hyssop (Agastache 'Raspberry Summer') prefer a moist, but not soggy, soil. Water them heavily every other day during the summer months when temperatures are higher. During cooler temperatures, water them once a week. Let the soil surface dry slightly between watering. This will help prevent fungal diseasese from becoming a problem. If the plants are grown in containers, make sure they are checked daily for moisture. If the top 2 inches of soil are dry, it’s time to water.",
+    "care_fertilizing": "",
+    "care_pruning": "Giant hyssop (Agastache 'Raspberry Summer') should only be pruned twice a year, once in late spring after most of the flowering has finished, and then again in early fall after the plant has gone dormant. Pruning in late spring should consist of deadheading the faded flowers and shaping the plant to maintain its size and form. In early fall, the stems can be trimmed back to about 1-third of their original size. This should not remove the new growth made in the growing season, as this could cause the plant to become leggy and sparse."
+  },
+  {
+    "id": 27,
+    "name": "Босилек",
+    "found": false,
+    "error": "Unexpected token 'P', \"Please Upg\"... is not valid JSON"
+  },
+  {
+    "id": 28,
+    "name": "Магданоз",
+    "found": true,
+    "perenual_id": 2098,
+    "scientific_name": "Coriandrum sativum",
+    "watering_general": null,
+    "sunlight": "",
+    "cycle": "",
+    "care_watering": "Cilantro (Coriandrum sativum) requires regular watering to remain healthy and thrive. Water your cilantro about once a week, or whenever the top 1-2 inches of soil are dry. Water thoroughly, until water pours out the drainage holes in the bottom of the pot. Allow the soil to dry out slightly between waterings, and if in doubt, under-water rather than overwater. In hot, dry weather, cilantro may need to be watered more frequently.",
+    "care_fertilizing": "",
+    "care_pruning": "Cilantro (Coriandrum sativum) is best pruned just as the plant begins to flower. This usually occurs 2-3 months after planting and should be done by trimming the stem just above the uppermost leaf set. Pruning in this way promotes bushier growth and increased leaf production, which cilantro is known for.\n\nYou should be sure to regularly prune your cilantro to keep the plant vigorous and healthy. Aim to remove 1/3 of the foliage from the plant each time you prune. If too many flowers become visible, you may want to reduce the amount of pruning to keep the plant from going into seed production."
+  },
+  {
+    "id": 29,
+    "name": "Розмарин",
+    "found": true,
+    "perenual_id": 2035,
+    "scientific_name": "Conradina verticillata",
+    "watering_general": null,
+    "sunlight": "",
+    "cycle": "",
+    "care_watering": "For Cumberland Rosemary, watering should be done as needed depending on the environment in which it is planted. Water the plant deeply once or twice a week, making sure to completely moisten the soil and to water the root zone thoroughly. During dry periods, additional watering may be needed to help keep soil moist. Be careful not to over-water, as this may cause root rot and other issues. Monitor the soil moisture level by feeling the soil, and water when the top inch or 2 of soil feels dry.",
+    "care_fertilizing": "",
+    "care_pruning": "Cumberland rosemary (Conradina verticillata) is best pruned during the early spring season. Pruning should be done with caution and only when necessary, as this plant has a tendency to become over-pruned. Prune only dead, damaged, or encroaching stems to maintain the shape of the plant. Prune only a small amount at any 1 time, as the plant is slow growing."
+  },
+  {
+    "id": 30,
+    "name": "Мента",
+    "found": true,
+    "perenual_id": 586,
+    "scientific_name": "Agastache cana",
+    "watering_general": null,
+    "sunlight": "",
+    "cycle": "",
+    "care_watering": "Hummingbird's mint should be watered moderately, depending on the season. In the spring and summer months, this species prefers about an inch of water per week. To avoid waterlogging the soil, this is best distributed over several waterings during this period. In autumn, water should be reduced to about every 2 weeks, and in the winter months, it should only be watered when the top few inches of soil appear dry to the touch. Too much water during the winter can lead to root rot.",
+    "care_fertilizing": "",
+    "care_pruning": "Hummingbird's Mint (Agastache cana) should be pruned in the late winter or early spring just before the new growth appears. Pruning should be light, removing only the dead growth and operating stems of the plant. Prune back excess stems to create a balanced shape and reduce the overall size if desired. This variety of mint is drought resistant but will respond to regular pruning and waterings; this will improve the quality and density of the plant’s flowers. Deadheading (removing the old blooms) will encourage new growth and more flowers in the summertime."
+  },
+  {
+    "id": 31,
+    "name": "Риган",
+    "found": false,
+    "error": "Unexpected token 'P', \"Please Upg\"... is not valid JSON"
+  },
+  {
+    "id": 32,
+    "name": "Мащерка",
+    "found": true,
+    "perenual_id": 2187,
+    "scientific_name": "Cotoneaster microphyllus",
+    "watering_general": null,
+    "sunlight": "",
+    "cycle": "",
+    "care_watering": "Small-leaved cotoneaster requires regular watering to ensure optimal health and growth. Depending on the season, it should be watered once or twice a week with approximately 1 inch of water. During the warm spring and summer months, you should increase the frequency of watering to every other day. During the cooler fall and winter months, the frequency of watering can be reduced to once a week. However, if the soil has dried out, you may need to water more than once a week. When watering, make sure to evenly saturate the soil. Avoid overwatering, as it can cause disease and root rot. Ensure to allow the top inch of soil to dry between waterings.",
+    "care_fertilizing": "",
+    "care_pruning": "Small-leaved Cotoneaster (Cotoneaster microphyllus) should be pruned in late winter or early spring, preferably in February or March. Pruning should be kept minimal since the plant blooms on old wood and grows best when left unpruned. To maintain the desirable size and shape, or to remove dead or damaged branches, selective pruning and shaping is recommended. If pruning is done, cut back only 1-third of the stems to maintain a natural shape. Be careful not to cut off the flower buds that form on older wood, since the plant blooms in the late spring on these buds."
+  },
+  {
+    "id": 33,
+    "name": "Градински чай",
+    "found": true,
+    "perenual_id": 969,
+    "scientific_name": "Artemisia abrotanum",
+    "watering_general": null,
+    "sunlight": "",
+    "cycle": "",
+    "care_watering": "Southernwood should be watered once per week if rain does not occur. Water deeply until the soil is evenly moist. Allow the soil to dry slightly between waterings. Avoid overwatering, as this can cause yellowing or dropping of leaves. Southernwood may also require occasional misting to help maintain its foliage.",
+    "care_fertilizing": "",
+    "care_pruning": "Southernwood (Artemisia abrotanum) should be pruned lightly 2 or 3 times each year. Spring pruning should be done shortly after new growth appears, with the removal of the tips of the branches in order to encourage bushiness. This is followed by summer pruning, which should take place in late July or early August and involves removing spent flowers, diseased foliage and stray branches. Finally, winter pruning should be done in late winter or early spring and includes removing any crossing or damaged branches. Pruning should be done with pruning shears or loppers and should be done selectively, leaving the overall shape of the bush intact."
+  },
+  {
+    "id": 34,
+    "name": "Слънчоглед",
+    "found": false,
+    "error": "Unexpected token 'P', \"Please Upg\"... is not valid JSON"
+  },
+  {
+    "id": 35,
+    "name": "Лале",
+    "found": true,
+    "perenual_id": 324,
+    "scientific_name": "Liriodendron tulipifera",
+    "watering_general": null,
+    "sunlight": "",
+    "cycle": "",
+    "care_watering": "Tuliptrees should be watered thoroughly once per week. Water should reach the root system and be allowed to penetrate the soil several inches. In periods of extreme heat, this schedule may need to be adjusted to twice per week. Be sure to check the soil for moisture prior to watering as overwatering these plants can be an issue. During winter, monitoring the soil for moisture content should be done often and establish a regular watering schedule for when it begins to dry out. After each watering, inspect the soil for standing pools of water and make sure it is draining away properly.",
+    "care_fertilizing": "",
+    "care_pruning": "Tuliptree (Liriodendron tulipifera) should be pruned in late winter or early spring before the new growth begins. Prune selectively to maintain the natural shape of the tree, reduce the size when needed and to thin out overcrowded branches. When pruning, make sure to cut a branch to where it meets another branch or the trunk of the tree. Avoid leaving stubs as this will damage the plant. Pruning should focus on removing dead, damaged or diseased branches as well as any crisscrossing and rubbing branches. Be careful not to over prune as this can leave the tree exposed to disease or weaken the structure of the tree."
+  },
+  {
+    "id": 36,
+    "name": "Петуния",
+    "found": false,
+    "error": "Unexpected token 'P', \"Please Upg\"... is not valid JSON"
+  },
+  {
+    "id": 37,
+    "name": "Бегония",
+    "found": true,
+    "perenual_id": 1194,
+    "scientific_name": "Begonia 'Art Hodes'",
+    "watering_general": null,
+    "sunlight": "",
+    "cycle": "",
+    "care_watering": "When watering your begonia, it is important to provide plenty of water and ensure the soil does not dry out completely. Water your begonia every 3-4 days in summer, or once a week in winter or if the soil is very dry. Aim to saturate the soil but avoid excess moisture or waterlogging, as this can cause the root rot. When adding water to the soil, make sure to water the base of the plant and avoid wetting the leaves, as this can encourage fungal diseases.",
+    "care_fertilizing": "",
+    "care_pruning": "Begonia 'Art Hodes' should be pruned in late spring or early summer. To prune properly, cut back no more than 1-third of the plant, removing old, tired stems and blooms as well as any shoots that may have emerged from underneath the canopy. This plant responds best to light, regular pruning and if pruned too heavily, it can suffer from stunted growth."
+  },
+  {
+    "id": 38,
+    "name": "Гладиола",
+    "found": false,
+    "error": "Unexpected token 'P', \"Please Upg\"... is not valid JSON"
+  },
+  {
+    "id": 39,
+    "name": "Теменужка",
+    "found": false
+  },
+  {
+    "id": 40,
+    "name": "Нарцис",
+    "found": false
+  }
+]
