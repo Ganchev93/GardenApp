@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
+import { Leaf, AlertCircle, SendHorizontal } from 'lucide-react'
 
 const GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY || ''
 
@@ -44,7 +45,7 @@ export default function Chat() {
           model: 'llama-3.3-70b-versatile',
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
-            ...history.map(m => ({ role: m.role, content: m.content }))
+            ...history.filter(m => m.role !== 'error').map(m => ({ role: m.role, content: m.content }))
           ],
           max_tokens: 1024,
         })
@@ -71,21 +72,22 @@ export default function Chat() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-8rem)]">
+    <div className="flex flex-col h-[calc(100vh-8rem)] lg:h-[calc(100vh-4rem)] lg:max-w-2xl">
       <div className="mb-3">
-        <h1 className="text-2xl font-bold text-green-800">AI Агроном</h1>
-        <p className="text-gray-500 text-sm">Питай за растения, болести, торене и грижи</p>
+        <h1 style={{ color: '#1E3A2F' }}>AI Агроном</h1>
+        <p className="text-sm mt-0.5" style={{ color: '#6A9E78' }}>Питай за растения, болести, торене и грижи</p>
       </div>
 
       {messages.length === 0 && (
         <div className="mb-4">
-          <p className="text-xs text-gray-400 mb-2 uppercase tracking-wide font-medium">Популярни въпроси</p>
+          <p className="text-xs mb-2 uppercase tracking-wide font-semibold" style={{ color: '#6A9E78' }}>Популярни въпроси</p>
           <div className="flex flex-wrap gap-2">
             {SUGGESTIONS.map((s, i) => (
               <button
                 key={i}
                 onClick={() => send(s)}
-                className="bg-white border border-green-200 text-green-700 text-xs px-3 py-1.5 rounded-full hover:bg-green-50 transition-colors"
+                className="text-xs px-3 py-1.5 rounded-full transition-opacity hover:opacity-80"
+                style={{ background: '#fff', border: '1px solid #B3D9C4', color: '#4A7C59' }}
               >
                 {s}
               </button>
@@ -98,23 +100,28 @@ export default function Chat() {
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             {m.role === 'error' ? (
-              <div className="bg-red-50 border border-red-200 rounded-2xl px-4 py-3 text-red-600 text-sm max-w-[85%]">
-                ❌ {m.content}
+              <div className="rounded-2xl px-4 py-3 text-sm max-w-[85%] flex items-start gap-2"
+                style={{ background: '#FFF0F0', border: '1px solid #FECACA', color: '#7F1D1D' }}>
+                <AlertCircle size={15} className="shrink-0 mt-0.5" /> {m.content}
               </div>
             ) : m.role === 'user' ? (
-              <div className="bg-green-600 text-white rounded-2xl rounded-br-sm px-4 py-2.5 text-sm max-w-[85%]">
+              <div className="rounded-2xl rounded-br-sm px-4 py-2.5 text-sm max-w-[85%]"
+                style={{ background: '#4A7C59', color: '#fff' }}>
                 {m.content}
               </div>
             ) : (
-              <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm text-sm max-w-[85%]">
-                <div className="text-xs text-green-600 font-medium mb-1.5">🌿 Агроном</div>
+              <div className="rounded-2xl rounded-bl-sm px-4 py-3 text-sm max-w-[85%]"
+                style={{ background: '#fff', border: '1px solid #D4EDE0' }}>
+                <div className="text-xs font-semibold mb-1.5 flex items-center gap-1" style={{ color: '#4A7C59' }}>
+                  <Leaf size={12} /> Агроном
+                </div>
                 <ReactMarkdown
                   components={{
-                    p: ({ children }) => <p className="text-gray-700 leading-relaxed mb-1.5 last:mb-0">{children}</p>,
-                    strong: ({ children }) => <strong className="font-semibold text-gray-800">{children}</strong>,
+                    p: ({ children }) => <p className="leading-relaxed mb-1.5 last:mb-0" style={{ color: '#1C2B23' }}>{children}</p>,
+                    strong: ({ children }) => <strong className="font-semibold" style={{ color: '#1E3A2F' }}>{children}</strong>,
                     ul: ({ children }) => <ul className="space-y-1 my-1.5">{children}</ul>,
                     ol: ({ children }) => <ol className="space-y-1 my-1.5">{children}</ol>,
-                    li: ({ children }) => <li className="text-gray-700 pl-2 border-l-2 border-green-200">{children}</li>,
+                    li: ({ children }) => <li className="pl-2" style={{ color: '#1C2B23', borderLeft: '2px solid #D4EDE0' }}>{children}</li>,
                   }}
                 >
                   {m.content}
@@ -126,11 +133,11 @@ export default function Chat() {
 
         {loading && (
           <div className="flex justify-start">
-            <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-sm px-4 py-3 shadow-sm">
+            <div className="rounded-2xl rounded-bl-sm px-4 py-3" style={{ background: '#fff', border: '1px solid #D4EDE0' }}>
               <div className="flex gap-1 items-center h-5">
-                <span className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <span className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <span className="w-2 h-2 bg-green-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#6A9E78', animationDelay: '0ms' }} />
+                <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#6A9E78', animationDelay: '150ms' }} />
+                <span className="w-2 h-2 rounded-full animate-bounce" style={{ background: '#6A9E78', animationDelay: '300ms' }} />
               </div>
             </div>
           </div>
@@ -138,7 +145,7 @@ export default function Chat() {
         <div ref={bottomRef} />
       </div>
 
-      <div className="pt-3 border-t border-gray-100">
+      <div className="pt-3" style={{ borderTop: '1px solid #E3DED4' }}>
         <div className="flex gap-2">
           <textarea
             value={input}
@@ -146,20 +153,24 @@ export default function Chat() {
             onKeyDown={handleKey}
             placeholder="Питай за растения..."
             rows={1}
-            className="flex-1 border border-gray-300 rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-green-400"
+            className="flex-1 rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none"
+            style={{ border: '1px solid #B3D9C4', background: '#fff', color: '#1C2B23' }}
           />
           <button
             onClick={() => send()}
             disabled={!input.trim() || loading}
-            className="bg-green-600 text-white px-4 rounded-xl font-medium text-sm hover:bg-green-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+            className="px-4 rounded-xl transition-opacity hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{ background: '#4A7C59', color: '#fff' }}
+            aria-label="Изпрати"
           >
-            ↑
+            <SendHorizontal size={16} />
           </button>
         </div>
         {messages.length > 0 && (
           <button
             onClick={() => setMessages([])}
-            className="text-xs text-gray-400 mt-2 hover:text-gray-600 transition-colors"
+            className="text-xs mt-2 transition-colors"
+            style={{ color: '#9CA3AF' }}
           >
             Изчисти чата
           </button>

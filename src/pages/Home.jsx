@@ -1,160 +1,221 @@
-import { useMemo } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { Check, Droplets, Sprout, BookOpen, Camera, ChevronRight } from 'lucide-react'
 import WeatherWidget from '../components/WeatherWidget'
+import { loadGarden, saveGarden, addDays, todayStr } from '../lib/garden'
+import { plants as catalog } from '../data/plants'
+import gardenImg from '../assets/garden.png'
 
-const STORAGE_KEY = 'my_garden_plants'
+function greeting() {
+  const h = new Date().getHours()
+  if (h >= 5 && h < 12) return 'Добро утро'
+  if (h >= 12 && h < 18) return 'Добър ден'
+  if (h >= 18 && h < 23) return 'Добър вечер'
+  return 'Лека нощ'
+}
 
-function loadGarden() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [] } catch { return [] }
+function daysLabel(n) {
+  return n === 1 ? 'след 1 ден' : `след ${n} дни`
 }
 
 export default function Home() {
-  const myPlants = loadGarden()
-  const today = new Date().toISOString().slice(0, 10)
+  const [myPlants, setMyPlants] = useState(loadGarden)
+  const today = todayStr()
 
-  const dueTasks = useMemo(() => {
-    const tasks = []
-    myPlants.forEach(p => {
-      if (p.nextWatering <= today) tasks.push({ ...p, type: 'water', label: 'Полей', color: 'blue' })
-      if (p.nextFertilizing <= today) tasks.push({ ...p, type: 'fertilize', label: 'Тори', color: 'green' })
-    })
-    return tasks
-  }, [myPlants, today])
-
-  const upcoming = useMemo(() => {
-    const in7 = new Date()
-    in7.setDate(in7.getDate() + 7)
-    const limit = in7.toISOString().slice(0, 10)
-    const tasks = []
-    myPlants.forEach(p => {
-      if (p.nextWatering > today && p.nextWatering <= limit)
-        tasks.push({ ...p, type: 'water', date: p.nextWatering })
-      if (p.nextFertilizing > today && p.nextFertilizing <= limit)
-        tasks.push({ ...p, type: 'fertilize', date: p.nextFertilizing })
-    })
-    return tasks.sort((a, b) => a.date.localeCompare(b.date)).slice(0, 5)
-  }, [myPlants, today])
-
-  const greeting = () => {
-    const h = new Date().getHours()
-    if (h < 12) return 'Добро утро'
-    if (h < 18) return 'Добър ден'
-    return 'Добър вечер'
+  function update(next) {
+    setMyPlants(next)
+    saveGarden(next)
   }
+  function markWatered(uid) {
+    update(myPlants.map(p => p.uid !== uid ? p : {
+      ...p, lastWatered: today, nextWatering: addDays(today, p.watering_frequency_days),
+    }))
+  }
+  function markFertilized(uid) {
+    update(myPlants.map(p => p.uid !== uid ? p : {
+      ...p, lastFertilized: today, nextFertilizing: addDays(today, p.frequency_days),
+    }))
+  }
+
+  const dueTasks = []
+  let doneToday = 0
+  myPlants.forEach(p => {
+    if (p.nextWatering <= today) dueTasks.push({ ...p, type: 'water' })
+    else if (p.lastWatered === today) doneToday++
+    if (p.nextFertilizing <= today) dueTasks.push({ ...p, type: 'fertilize' })
+    else if (p.lastFertilized === today) doneToday++
+  })
+  const totalToday = dueTasks.length + doneToday
+
+  const limit = addDays(today, 7)
+  const upcoming = []
+  myPlants.forEach(p => {
+    if (p.nextWatering > today && p.nextWatering <= limit)
+      upcoming.push({ ...p, type: 'water', date: p.nextWatering })
+    if (p.nextFertilizing > today && p.nextFertilizing <= limit)
+      upcoming.push({ ...p, type: 'fertilize', date: p.nextFertilizing })
+  })
+  upcoming.sort((a, b) => a.date.localeCompare(b.date))
+
+  const dateLine = new Date().toLocaleDateString('bg-BG', { weekday: 'long', day: 'numeric', month: 'long' })
 
   return (
     <div>
-      <WeatherWidget />
-
-      <div className="mb-5">
-        <h1 className="text-2xl font-bold text-green-800">{greeting()} 🌿</h1>
-        <p className="text-gray-400 text-sm">
-          {myPlants.length === 0
-            ? 'Добавете растения в "Моята градина"'
-            : `${myPlants.length} растения · ${dueTasks.length} задачи днес`}
-        </p>
+      <div className="anim-fade mb-5">
+        <h1 style={{ color: '#1E3A2F' }}>{greeting()}</h1>
+        <p className="text-sm mt-1 capitalize" style={{ color: '#6A9E78' }}>{dateLine}</p>
       </div>
 
-      {myPlants.length === 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-6 text-center shadow-sm">
-          <div className="text-5xl mb-3">🌱</div>
-          <p className="font-semibold text-gray-700 mb-1">Градината е празна</p>
-          <p className="text-sm text-gray-400 mb-4">Добавете растения за да следите графика</p>
+      <div className="lg:grid lg:grid-cols-[1fr_320px] lg:gap-8 lg:items-start">
+      <div>
+      {myPlants.length === 0 ? (
+        <div className="anim-fade rounded-3xl pt-4 pb-6 px-6 text-center mb-5" style={{ background: '#fff', border: '1px solid #D4EDE0' }}>
+          <img src={gardenImg} alt="Градина" className="w-56 h-56 mx-auto object-contain" />
+          <p className="font-semibold mb-1" style={{ color: '#1C2B23' }}>Градината е празна</p>
+          <p className="text-sm mb-4" style={{ color: '#6A9E78' }}>Добавете растения за да следите графика</p>
           <Link
             to="/garden"
-            className="inline-block bg-green-600 text-white px-5 py-2 rounded-xl text-sm font-medium hover:bg-green-700"
+            className="inline-block px-5 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
+            style={{ background: '#4A7C59', color: '#fff' }}
           >
             + Добави растение
           </Link>
         </div>
+      ) : (
+        <TodayCard
+          dueTasks={dueTasks}
+          doneToday={doneToday}
+          totalToday={totalToday}
+          onWater={markWatered}
+          onFertilize={markFertilized}
+        />
       )}
 
-      {dueTasks.length > 0 && (
-        <section className="mb-5">
-          <h2 className="text-sm font-semibold text-red-500 mb-2 flex items-center gap-1">
-            🔔 За днес ({dueTasks.length})
-          </h2>
-          <div className="grid gap-2">
-            {dueTasks.map((t, i) => (
-              <TaskCard key={i} task={t} />
-            ))}
-          </div>
-        </section>
-      )}
+      <WeatherWidget />
+      </div>
 
+      <div>
       {upcoming.length > 0 && (
         <section className="mb-5">
-          <h2 className="text-sm font-semibold text-gray-500 mb-2">Предстоящо (7 дни)</h2>
-          <div className="grid gap-2">
-            {upcoming.map((t, i) => (
-              <UpcomingCard key={i} task={t} />
+          <p className="text-xs font-semibold uppercase tracking-wide mb-1" style={{ color: '#6A9E78' }}>
+            Предстоящо
+          </p>
+          <div>
+            {upcoming.slice(0, 5).map((t, i) => (
+              <UpcomingRow key={`${t.uid}-${t.type}`} task={t} today={today} last={i === Math.min(upcoming.length, 5) - 1} />
             ))}
           </div>
         </section>
       )}
 
-      {myPlants.length > 0 && dueTasks.length === 0 && (
-        <div className="bg-green-50 rounded-2xl border border-green-100 p-5 text-center">
-          <div className="text-3xl mb-2">✅</div>
-          <p className="font-semibold text-green-700">Всичко е наред!</p>
-          <p className="text-sm text-green-500 mt-1">Няма задачи за днес</p>
+      <div className="grid grid-cols-2 gap-3">
+        <Link to="/plants" className="rounded-2xl p-4 transition-opacity hover:opacity-90"
+          style={{ background: '#fff', border: '1px solid #D4EDE0' }}>
+          <BookOpen size={20} style={{ color: '#4A7C59' }} className="mb-2" />
+          <div className="font-semibold text-sm" style={{ color: '#1C2B23' }}>База растения</div>
+          <div className="text-xs mt-0.5" style={{ color: '#6A9E78' }}>{catalog.length} вида</div>
+        </Link>
+        <Link to="/analyze" className="rounded-2xl p-4 transition-opacity hover:opacity-90"
+          style={{ background: '#fff', border: '1px solid #D4EDE0' }}>
+          <Camera size={20} style={{ color: '#4A7C59' }} className="mb-2" />
+          <div className="font-semibold text-sm" style={{ color: '#1C2B23' }}>AI Анализ</div>
+          <div className="text-xs mt-0.5" style={{ color: '#6A9E78' }}>Снимай растение</div>
+        </Link>
+      </div>
+      </div>
+      </div>
+    </div>
+  )
+}
+
+function ProgressRing({ done, total }) {
+  const r = 24
+  const c = 2 * Math.PI * r
+  const ratio = total > 0 ? done / total : 1
+  return (
+    <div className="relative shrink-0" style={{ width: 64, height: 64 }}>
+      <svg width="64" height="64" viewBox="0 0 64 64" className="-rotate-90">
+        <circle cx="32" cy="32" r={r} fill="none" stroke="rgba(255,255,255,0.25)" strokeWidth="5" />
+        <circle
+          cx="32" cy="32" r={r} fill="none" stroke="#fff" strokeWidth="5" strokeLinecap="round"
+          strokeDasharray={c} strokeDashoffset={c * (1 - ratio)}
+          style={{ transition: 'stroke-dashoffset 0.5s ease-out' }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
+        {done}/{total}
+      </div>
+    </div>
+  )
+}
+
+function TodayCard({ dueTasks, doneToday, totalToday, onWater, onFertilize }) {
+  const allDone = dueTasks.length === 0
+  return (
+    <div className="anim-fade rounded-3xl p-5 mb-5 text-white"
+      style={{ background: 'linear-gradient(135deg, #4A7C59 0%, #2D5540 100%)' }}>
+      <div className="flex items-center gap-4 mb-1">
+        <ProgressRing done={doneToday} total={Math.max(totalToday, 1)} />
+        <div>
+          <div className="text-xs font-semibold uppercase tracking-wide" style={{ opacity: 0.7 }}>Днес</div>
+          <div className="font-semibold text-lg leading-tight" style={{ fontFamily: 'Fraunces, Georgia, serif' }}>
+            {allDone
+              ? (totalToday > 0 ? 'Всичко е готово' : 'Няма задачи днес')
+              : `${dueTasks.length} ${dueTasks.length === 1 ? 'задача чака' : 'задачи чакат'}`}
+          </div>
+        </div>
+      </div>
+
+      {dueTasks.length > 0 && (
+        <div className="mt-3 space-y-1.5">
+          {dueTasks.map(t => {
+            const isWater = t.type === 'water'
+            return (
+              <div key={`${t.uid}-${t.type}`}
+                className="flex items-center gap-3 rounded-xl px-3 py-2.5"
+                style={{ background: 'rgba(255,255,255,0.13)' }}>
+                <span className="text-lg leading-none shrink-0">{t.emoji}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-semibold truncate">{t.name}</div>
+                  <div className="flex items-center gap-1 text-xs" style={{ opacity: 0.75 }}>
+                    {isWater ? <Droplets size={12} /> : <Sprout size={12} />}
+                    {isWater ? 'Поливане' : 'Торене'}
+                  </div>
+                </div>
+                <button
+                  onClick={() => isWater ? onWater(t.uid) : onFertilize(t.uid)}
+                  className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-transform active:scale-90"
+                  style={{ background: '#fff', color: '#2D5540' }}
+                  aria-label="Готово"
+                >
+                  <Check size={16} strokeWidth={3} />
+                </button>
+              </div>
+            )
+          })}
         </div>
       )}
-
-      <div className="mt-5 grid grid-cols-2 gap-3">
-        <Link to="/plants" className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:bg-green-50 transition-colors">
-          <div className="text-2xl mb-1">🌿</div>
-          <div className="font-semibold text-gray-700 text-sm">База растения</div>
-          <div className="text-xs text-gray-400">40 вида</div>
-        </Link>
-        <Link to="/analyze" className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:bg-green-50 transition-colors">
-          <div className="text-2xl mb-1">📷</div>
-          <div className="font-semibold text-gray-700 text-sm">AI Анализ</div>
-          <div className="text-xs text-gray-400">Снимай растение</div>
-        </Link>
-      </div>
     </div>
   )
 }
 
-function TaskCard({ task }) {
+function UpcomingRow({ task, today, last }) {
   const isWater = task.type === 'water'
+  const daysUntil = Math.max(1, Math.ceil((new Date(task.date) - new Date(today)) / 86400000))
   return (
-    <div className={`rounded-2xl border px-4 py-3 flex items-center gap-3 ${
-      isWater ? 'bg-blue-50 border-blue-100' : 'bg-red-50 border-red-100'
-    }`}>
-      <span className="text-xl">{task.emoji}</span>
-      <div className="flex-1">
-        <div className="font-semibold text-gray-800 text-sm">{task.name}</div>
-        <div className={`text-xs font-medium ${isWater ? 'text-blue-500' : 'text-red-500'}`}>
-          {isWater ? '💧 Нужда от поливане' : '🌱 Нужда от торене'}
-        </div>
+    <div className="flex items-center gap-3 py-2.5"
+      style={{ borderBottom: last ? 'none' : '1px solid #E3DED4' }}>
+      <span className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
+        style={{ background: isWater ? '#EFF8FF' : '#E8F5F0', color: isWater ? '#3B82F6' : '#4A7C59' }}>
+        {isWater ? <Droplets size={14} /> : <Sprout size={14} />}
+      </span>
+      <div className="flex-1 min-w-0">
+        <span className="text-sm font-medium" style={{ color: '#1C2B23' }}>{task.name}</span>
+        <span className="text-xs ml-2" style={{ color: '#9CA3AF' }}>{isWater ? 'поливане' : 'торене'}</span>
       </div>
-      <Link
-        to="/garden"
-        className={`text-xs px-3 py-1.5 rounded-lg font-medium ${
-          isWater ? 'bg-blue-500 text-white' : 'bg-green-600 text-white'
-        }`}
-      >
-        Виж →
-      </Link>
-    </div>
-  )
-}
-
-function UpcomingCard({ task }) {
-  const isWater = task.type === 'water'
-  const daysUntil = Math.ceil((new Date(task.date) - new Date()) / 86400000)
-  return (
-    <div className="bg-white rounded-2xl border border-gray-100 px-4 py-3 flex items-center gap-3 shadow-sm">
-      <span className="text-xl">{task.emoji}</span>
-      <div className="flex-1">
-        <div className="font-semibold text-gray-800 text-sm">{task.name}</div>
-        <div className="text-xs text-gray-400">{isWater ? '💧 Поливане' : '🌱 Торене'}</div>
-      </div>
-      <div className="text-right">
-        <div className="text-xs font-semibold text-gray-600">след {daysUntil} дни</div>
-        <div className="text-xs text-gray-400">{task.date}</div>
+      <div className="flex items-center gap-1 text-xs font-medium shrink-0" style={{ color: '#6A9E78' }}>
+        {daysLabel(daysUntil)}
+        <ChevronRight size={13} style={{ color: '#B3D9C4' }} />
       </div>
     </div>
   )

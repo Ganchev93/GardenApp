@@ -1,18 +1,22 @@
-import { useState, useEffect, useRef } from 'react'
-import { plants } from '../data/plants'
+import { useState, useEffect } from 'react'
+import { Droplets, Sprout, Bug, X, NotebookPen, Plus } from 'lucide-react'
+import { plants as catalog } from '../data/plants'
+import { loadGarden, saveGarden, addDays } from '../lib/garden'
+import emptyBedImg from '../assets/empty-bed.png'
 
-const STORAGE_KEY = 'my_garden_plants'
+function dayLabel(days, due) {
+  if (due) {
+    if (days === 0) return 'Днес!'
+    return Math.abs(days) === 1 ? 'Просрочено 1 ден' : `Просрочено ${Math.abs(days)} дни`
+  }
+  return days === 1 ? 'Утре' : `След ${days} дни`
+}
 
-function loadGarden() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [] } catch { return [] }
-}
-function saveGarden(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-}
-function addDays(dateStr, days) {
-  const d = new Date(dateStr)
-  d.setDate(d.getDate() + days)
-  return d.toISOString().slice(0, 10)
+const catStyle = {
+  'зеленчук': { bg: '#D4EDE0', color: '#1E3A2F' },
+  'плод':     { bg: '#FDF3DC', color: '#7A4A00' },
+  'билка':    { bg: '#E8F5F0', color: '#1E5C3A' },
+  'цвете':    { bg: '#FDE8F0', color: '#7A1D45' },
 }
 
 export default function MyGarden() {
@@ -21,14 +25,15 @@ export default function MyGarden() {
   const [selectedId, setSelectedId] = useState('')
   const [lastWatered, setLastWatered] = useState(new Date().toISOString().slice(0, 10))
   const [lastFertilized, setLastFertilized] = useState(new Date().toISOString().slice(0, 10))
-  const [activeTab, setActiveTab] = useState('water')
   const [photoView, setPhotoView] = useState(null)
 
   useEffect(() => { saveGarden(myPlants) }, [myPlants])
 
+  const today = new Date().toISOString().slice(0, 10)
+
   function addPlant() {
     if (!selectedId) return
-    const plant = plants.find(p => p.id === Number(selectedId))
+    const plant = catalog.find(p => p.id === Number(selectedId))
     if (!plant) return
     setMyPlants(prev => [...prev, {
       uid: Date.now(),
@@ -51,273 +56,228 @@ export default function MyGarden() {
   }
 
   function markWatered(uid) {
-    const today = new Date().toISOString().slice(0, 10)
     setMyPlants(prev => prev.map(p => p.uid !== uid ? p : {
-      ...p,
-      lastWatered: today,
-      nextWatering: addDays(today, p.watering_frequency_days),
+      ...p, lastWatered: today, nextWatering: addDays(today, p.watering_frequency_days),
     }))
   }
-
   function markFertilized(uid) {
-    const today = new Date().toISOString().slice(0, 10)
     setMyPlants(prev => prev.map(p => p.uid !== uid ? p : {
-      ...p,
-      lastFertilized: today,
-      nextFertilizing: addDays(today, p.frequency_days),
+      ...p, lastFertilized: today, nextFertilizing: addDays(today, p.frequency_days),
     }))
   }
+  function removePlant(uid) { setMyPlants(prev => prev.filter(p => p.uid !== uid)) }
+  function updateNote(uid, note) { setMyPlants(prev => prev.map(p => p.uid !== uid ? p : { ...p, note })) }
 
-  function removePlant(uid) {
-    setMyPlants(prev => prev.filter(p => p.uid !== uid))
-  }
+  const urgentCount = myPlants.filter(p => p.nextWatering <= today || p.nextFertilizing <= today).length
 
-  function updateNote(uid, note) {
-    setMyPlants(prev => prev.map(p => p.uid !== uid ? p : { ...p, note }))
-  }
-
-  const today = new Date().toISOString().slice(0, 10)
-
-  const waterDue = myPlants.filter(p => p.nextWatering <= today)
-  const waterUpcoming = myPlants.filter(p => p.nextWatering > today)
-  const fertilizeDue = myPlants.filter(p => p.nextFertilizing <= today)
-  const fertilizeUpcoming = myPlants.filter(p => p.nextFertilizing > today)
-
-  const waterCount = waterDue.length
-  const fertilizeCount = fertilizeDue.length
+  const sorted = [...myPlants].sort((a, b) => {
+    const aU = a.nextWatering <= today || a.nextFertilizing <= today
+    const bU = b.nextWatering <= today || b.nextFertilizing <= today
+    if (aU && !bU) return -1
+    if (!aU && bU) return 1
+    return new Date(a.nextWatering) - new Date(b.nextWatering)
+  })
 
   return (
     <div>
       {photoView && (
-        <div
-          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
-          onClick={() => setPhotoView(null)}
-        >
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          onClick={() => setPhotoView(null)}>
           <img src={photoView} alt="plant" className="max-w-full max-h-full rounded-2xl object-contain" />
         </div>
       )}
 
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-2xl font-bold text-green-800">Моята градина</h1>
-          <p className="text-gray-400 text-sm">{myPlants.length} растения</p>
+          <h1 style={{ color: '#1E3A2F' }}>Моята градина</h1>
+          <p className="text-sm mt-0.5" style={{ color: '#6A9E78' }}>
+            {myPlants.length} растения
+            {urgentCount > 0 && <span style={{ color: '#C97D0E' }}> · {urgentCount} чакат грижа</span>}
+          </p>
         </div>
-        <button
-          onClick={() => setShowAdd(!showAdd)}
-          className="bg-green-600 text-white px-4 py-2 rounded-xl text-sm font-medium hover:bg-green-700 transition-colors"
-        >
-          + Добави
+        <button onClick={() => setShowAdd(!showAdd)}
+          className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 flex items-center gap-1"
+          style={{ background: '#4A7C59', color: '#fff' }}>
+          <Plus size={15} strokeWidth={2.5} /> Добави
         </button>
       </div>
 
       {showAdd && (
-        <div className="bg-white border border-green-100 rounded-2xl p-4 mb-4 shadow-sm">
-          <h3 className="font-semibold text-gray-700 mb-3">Добави растение</h3>
-          <select
-            value={selectedId}
-            onChange={e => setSelectedId(e.target.value)}
-            className="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-green-400"
-          >
+        <div className="rounded-2xl p-4 mb-4" style={{ background: '#fff', border: '1px solid #D4EDE0' }}>
+          <h3 className="font-semibold mb-3" style={{ color: '#1C2B23' }}>Добави растение</h3>
+          <select value={selectedId} onChange={e => setSelectedId(e.target.value)}
+            className="w-full rounded-xl px-3 py-2.5 text-sm mb-3 focus:outline-none"
+            style={{ border: '1px solid #B3D9C4', color: '#1C2B23', background: '#F5F2EC' }}>
             <option value="">-- Избери растение --</option>
-            {plants.map(p => (
-              <option key={p.id} value={p.id}>{p.emoji} {p.name}</option>
-            ))}
+            {catalog.map(p => <option key={p.id} value={p.id}>{p.emoji} {p.name}</option>)}
           </select>
           <div className="grid grid-cols-2 gap-2 mb-3">
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Последно поливане</label>
+              <label className="block text-xs mb-1" style={{ color: '#6A9E78' }}>Последно поливане</label>
               <input type="date" value={lastWatered} onChange={e => setLastWatered(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
+                className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                style={{ border: '1px solid #B3D9C4', background: '#F5F2EC', color: '#1C2B23' }} />
             </div>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Последно торене</label>
+              <label className="block text-xs mb-1" style={{ color: '#6A9E78' }}>Последно торене</label>
               <input type="date" value={lastFertilized} onChange={e => setLastFertilized(e.target.value)}
-                className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400" />
+                className="w-full rounded-xl px-3 py-2 text-sm focus:outline-none"
+                style={{ border: '1px solid #B3D9C4', background: '#F5F2EC', color: '#1C2B23' }} />
             </div>
           </div>
           <div className="flex gap-2">
             <button onClick={addPlant}
-              className="flex-1 bg-green-600 text-white py-2.5 rounded-xl text-sm font-medium hover:bg-green-700">
-              Добави
-            </button>
+              className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
+              style={{ background: '#4A7C59', color: '#fff' }}>Добави</button>
             <button onClick={() => setShowAdd(false)}
-              className="flex-1 border border-gray-300 text-gray-600 py-2.5 rounded-xl text-sm hover:bg-gray-50">
-              Откажи
-            </button>
+              className="flex-1 py-2.5 rounded-xl text-sm"
+              style={{ border: '1px solid #B3D9C4', color: '#4A7C59', background: '#fff' }}>Откажи</button>
           </div>
         </div>
       )}
 
       {myPlants.length === 0 && (
-        <div className="text-center py-12 text-gray-400">
-          <div className="text-5xl mb-3">🌱</div>
-          <p className="font-medium">Нямате добавени растения</p>
+        <div className="text-center py-6" style={{ color: '#6A9E78' }}>
+          <img src={emptyBedImg} alt="Празна градина" className="w-52 h-52 mx-auto object-contain" />
+          <p className="font-semibold" style={{ color: '#1C2B23' }}>Нямате добавени растения</p>
           <p className="text-sm mt-1">Натиснете "+ Добави" за начало</p>
         </div>
       )}
 
-      {myPlants.length > 0 && (
-        <>
-          <div className="flex rounded-xl overflow-hidden border border-gray-200 mb-4">
-            <button
-              onClick={() => setActiveTab('water')}
-              className={`flex-1 py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
-                activeTab === 'water' ? 'bg-blue-500 text-white' : 'bg-white text-gray-600'
-              }`}
-            >
-              💧 Поливане {waterCount > 0 && (
-                <span className={`text-xs px-1.5 py-0.5 rounded-full ${activeTab === 'water' ? 'bg-white text-blue-500' : 'bg-red-500 text-white'}`}>
-                  {waterCount}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('fertilize')}
-              className={`flex-1 py-2.5 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
-                activeTab === 'fertilize' ? 'bg-green-600 text-white' : 'bg-white text-gray-600'
-              }`}
-            >
-              🌱 Торене {fertilizeCount > 0 && (
-                <span className={`text-xs px-1.5 py-0.5 rounded-full ${activeTab === 'fertilize' ? 'bg-white text-green-600' : 'bg-red-500 text-white'}`}>
-                  {fertilizeCount}
-                </span>
-              )}
-            </button>
-          </div>
-
-          {activeTab === 'water' && (
-            <>
-              {waterDue.length > 0 && (
-                <section className="mb-4">
-                  <h2 className="text-xs font-semibold text-red-500 mb-2 uppercase tracking-wide">Трябва поливане ({waterDue.length})</h2>
-                  <div className="grid gap-2">
-                    {waterDue.map(p => (
-                      <PlantRow key={p.uid} plant={p} type="water" urgent onAction={markWatered} onRemove={removePlant} onPhotoView={setPhotoView} onNote={updateNote} />
-                    ))}
-                  </div>
-                </section>
-              )}
-              {waterUpcoming.length > 0 && (
-                <section>
-                  <h2 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Предстоящо</h2>
-                  <div className="grid gap-2">
-                    {waterUpcoming.map(p => (
-                      <PlantRow key={p.uid} plant={p} type="water" onAction={markWatered} onRemove={removePlant} onPhotoView={setPhotoView} onNote={updateNote} />
-                    ))}
-                  </div>
-                </section>
-              )}
-            </>
-          )}
-
-          {activeTab === 'fertilize' && (
-            <>
-              {fertilizeDue.length > 0 && (
-                <section className="mb-4">
-                  <h2 className="text-xs font-semibold text-red-500 mb-2 uppercase tracking-wide">Трябва торене ({fertilizeDue.length})</h2>
-                  <div className="grid gap-2">
-                    {fertilizeDue.map(p => (
-                      <PlantRow key={p.uid} plant={p} type="fertilize" urgent onAction={markFertilized} onRemove={removePlant} onPhotoView={setPhotoView} onNote={updateNote} />
-                    ))}
-                  </div>
-                </section>
-              )}
-              {fertilizeUpcoming.length > 0 && (
-                <section>
-                  <h2 className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Предстоящо</h2>
-                  <div className="grid gap-2">
-                    {fertilizeUpcoming.map(p => (
-                      <PlantRow key={p.uid} plant={p} type="fertilize" onAction={markFertilized} onRemove={removePlant} onPhotoView={setPhotoView} onNote={updateNote} />
-                    ))}
-                  </div>
-                </section>
-              )}
-            </>
-          )}
-        </>
-      )}
+      <div className="grid gap-3 lg:grid-cols-2 lg:items-start">
+        {sorted.map(p => (
+          <PlantCard key={p.uid} plant={p} today={today}
+            onMarkWatered={markWatered}
+            onMarkFertilized={markFertilized}
+            onRemove={removePlant}
+            onPhotoView={setPhotoView}
+            onNote={updateNote} />
+        ))}
+      </div>
     </div>
   )
 }
 
-function PlantRow({ plant, type, urgent, onAction, onRemove, onPhotoView, onNote }) {
-  const isWater = type === 'water'
-  const nextDate = isWater ? plant.nextWatering : plant.nextFertilizing
-  const daysUntil = Math.ceil((new Date(nextDate) - new Date()) / 86400000)
+function PlantCard({ plant, today, onMarkWatered, onMarkFertilized, onRemove, onPhotoView, onNote }) {
   const [editingNote, setEditingNote] = useState(false)
   const [noteVal, setNoteVal] = useState(plant.note || '')
 
+  const waterDue = plant.nextWatering <= today
+  const fertilizeDue = plant.nextFertilizing <= today
+  const waterDays = Math.ceil((new Date(plant.nextWatering) - new Date()) / 86400000)
+  const fertilizeDays = Math.ceil((new Date(plant.nextFertilizing) - new Date()) / 86400000)
+  const isUrgent = waterDue || fertilizeDue
+
+  const catalogPlant = catalog.find(p => p.id === plant.plantId)
+  const pests = catalogPlant?.pest_control?.pests?.slice(0, 3) || []
+
+  const healthColor = (waterDue && fertilizeDue) ? '#EF4444' : isUrgent ? '#C97D0E' : '#4A7C59'
+  const healthLabel = (waterDue && fertilizeDue) ? 'Нужда от грижа' : waterDue ? 'Нужда от поливане' : fertilizeDue ? 'Нужда от торене' : 'В добро здраве'
+  const cat = catStyle[plant.category] || catStyle['зеленчук']
+
   return (
-    <div className={`bg-white rounded-2xl border shadow-sm ${
-      urgent ? (isWater ? 'border-blue-200 bg-blue-50' : 'border-red-200 bg-red-50') : 'border-gray-100'
-    }`}>
+    <div className={`anim-fade rounded-2xl overflow-hidden ${isUrgent ? 'anim-urgent' : ''}`}
+      style={{ background: '#fff', border: `1px solid ${isUrgent ? '#FED7AA' : '#D4EDE0'}` }}>
+
+      {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3">
-        {plant.photo ? (
-          <button onClick={() => onPhotoView(plant.photo)} className="shrink-0">
-            <img src={plant.photo} alt={plant.name} className="w-10 h-10 rounded-xl object-cover" />
-          </button>
-        ) : (
-          <span className="text-2xl">{plant.emoji}</span>
-        )}
+        {plant.photo
+          ? <button onClick={() => onPhotoView(plant.photo)} className="shrink-0">
+              <img src={plant.photo} alt={plant.name} className="w-12 h-12 rounded-xl object-cover" />
+            </button>
+          : <span className="text-3xl shrink-0 leading-none">{plant.emoji}</span>
+        }
         <div className="flex-1 min-w-0">
-          <div className="font-semibold text-gray-800 text-sm">{plant.name}</div>
-          <div className="text-xs text-gray-400 truncate">
-            {isWater ? plant.watering_amount : plant.fertilizer_type}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="font-semibold text-sm" style={{ color: '#1C2B23' }}>{plant.name}</span>
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: cat.bg, color: cat.color }}>
+              {plant.category}
+            </span>
           </div>
-          <div className={`text-xs font-medium mt-0.5 ${
-            urgent ? (isWater ? 'text-blue-500' : 'text-red-500') : 'text-green-600'
-          }`}>
-            {urgent
-              ? `Просрочено с ${Math.abs(daysUntil)} дни`
-              : `След ${daysUntil} дни (${nextDate})`}
+          <div className="flex items-center gap-1.5 mt-1">
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: healthColor }} />
+            <span className="text-xs" style={{ color: healthColor }}>{healthLabel}</span>
           </div>
         </div>
-        <div className="flex flex-col gap-1 items-end">
-          <button
-            onClick={() => onAction(plant.uid)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium text-white ${
-              isWater ? 'bg-blue-500 hover:bg-blue-600' : 'bg-green-600 hover:bg-green-700'
-            }`}
-          >
-            {isWater ? '💧 Полято' : '✓ Торено'}
-          </button>
-          <button onClick={() => onRemove(plant.uid)} className="text-red-400 text-xs hover:text-red-600">
-            Премахни
-          </button>
-        </div>
+        <button onClick={() => onRemove(plant.uid)}
+          className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+          style={{ color: '#9CA3AF', border: '1px solid #E5E7EB' }}>
+          <X size={13} />
+        </button>
       </div>
 
+      <div style={{ height: '1px', background: '#F0EBE3' }} />
+
+      {/* Поливане */}
+      <div className="flex items-center gap-3 px-4 py-2.5">
+        <Droplets size={16} className="shrink-0" style={{ color: waterDue ? '#2563EB' : '#B3D9C4' }} />
+        <div className="flex-1 min-w-0">
+          <span className="text-sm font-medium" style={{ color: waterDue ? '#2563EB' : '#1C2B23' }}>
+            {dayLabel(waterDays, waterDue)}
+          </span>
+          <span className="text-xs ml-2" style={{ color: '#9CA3AF' }}>{plant.watering_amount}</span>
+        </div>
+        <button onClick={() => onMarkWatered(plant.uid)}
+          className="text-xs px-3 py-1 rounded-lg font-semibold shrink-0 transition-transform active:scale-90"
+          style={{ background: waterDue ? '#2563EB' : '#EDE8DF', color: waterDue ? '#fff' : '#6A9E78' }}>
+          Полято
+        </button>
+      </div>
+
+      {/* Торене */}
+      <div className="flex items-center gap-3 px-4 py-2.5">
+        <Sprout size={16} className="shrink-0" style={{ color: fertilizeDue ? '#C97D0E' : '#B3D9C4' }} />
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <span className="text-sm font-medium" style={{ color: fertilizeDue ? '#C97D0E' : '#1C2B23' }}>
+            {dayLabel(fertilizeDays, fertilizeDue)}
+          </span>
+          <span className="text-xs ml-2 truncate" style={{ color: '#9CA3AF' }}>{plant.fertilizer_type.split(' ').slice(0,3).join(' ')}</span>
+        </div>
+        <button onClick={() => onMarkFertilized(plant.uid)}
+          className="text-xs px-3 py-1 rounded-lg font-semibold shrink-0 transition-transform active:scale-90"
+          style={{ background: fertilizeDue ? '#C97D0E' : '#EDE8DF', color: fertilizeDue ? '#fff' : '#6A9E78' }}>
+          Торено
+        </button>
+      </div>
+
+      {/* Вредители */}
+      {pests.length > 0 && (
+        <>
+          <div style={{ height: '1px', background: '#F0EBE3' }} />
+          <div className="px-4 py-2 flex items-start gap-2">
+            <Bug size={14} className="shrink-0 mt-0.5" style={{ color: '#B3D9C4' }} />
+            <span className="text-xs leading-relaxed" style={{ color: '#9CA3AF' }}>
+              {pests.join(' · ')}
+            </span>
+          </div>
+        </>
+      )}
+
+      {/* Бележка */}
+      <div style={{ height: '1px', background: '#F0EBE3' }} />
       {editingNote ? (
-        <div className="px-4 pb-3 flex gap-2">
-          <input
-            autoFocus
-            value={noteVal}
+        <div className="px-4 py-2 flex gap-2">
+          <input autoFocus value={noteVal}
             onChange={e => setNoteVal(e.target.value)}
             onKeyDown={e => {
               if (e.key === 'Enter') { onNote(plant.uid, noteVal); setEditingNote(false) }
               if (e.key === 'Escape') { setNoteVal(plant.note || ''); setEditingNote(false) }
             }}
             placeholder="Добави бележка..."
-            className="flex-1 border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-green-400 bg-white"
-          />
+            className="flex-1 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none"
+            style={{ border: '1px solid #B3D9C4', background: '#F5F2EC', color: '#1C2B23' }} />
           <button onClick={() => { onNote(plant.uid, noteVal); setEditingNote(false) }}
-            className="text-xs bg-green-600 text-white px-2.5 py-1.5 rounded-lg">
-            OK
-          </button>
+            className="text-xs px-2.5 py-1.5 rounded-lg font-semibold"
+            style={{ background: '#4A7C59', color: '#fff' }}>OK</button>
         </div>
       ) : (
-        <div className="px-4 pb-3">
-          {plant.note ? (
-            <button onClick={() => setEditingNote(true)}
-              className="text-xs text-gray-500 italic hover:text-gray-700 text-left">
-              📝 {plant.note}
-            </button>
-          ) : (
-            <button onClick={() => setEditingNote(true)}
-              className="text-xs text-gray-300 hover:text-gray-500">
-              + бележка
-            </button>
-          )}
+        <div className="px-4 py-2">
+          {plant.note
+            ? <button onClick={() => setEditingNote(true)} className="text-xs italic text-left flex items-center gap-1.5" style={{ color: '#6A9E78' }}>
+                <NotebookPen size={12} className="shrink-0" /> {plant.note}
+              </button>
+            : <button onClick={() => setEditingNote(true)} className="text-xs" style={{ color: '#B3D9C4' }}>+ бележка</button>
+          }
         </div>
       )}
     </div>

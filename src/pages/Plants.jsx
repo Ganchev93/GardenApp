@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Search, Droplets, Sprout, Bug, ChevronDown, ChevronUp, Lightbulb, Shield, Check } from 'lucide-react'
 import { plants, categories } from '../data/plants'
 
 export default function Plants() {
@@ -13,44 +14,57 @@ export default function Plants() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-green-800 mb-1">Растения</h1>
-      <p className="text-gray-500 mb-4 text-sm">{plants.length} вида с данни за торене и поливане</p>
+      <h1 style={{ color: '#1E3A2F' }}>Растения</h1>
+      <p className="text-sm mt-0.5 mb-4" style={{ color: '#6A9E78' }}>
+        {plants.length} вида с данни за торене и поливане
+      </p>
 
-      <input
-        type="text"
-        placeholder="Търси растение..."
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-        className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-green-400"
-      />
+      <div className="relative mb-3">
+        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: '#B3D9C4' }} />
+        <input
+          type="text"
+          placeholder="Търси растение..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          className="w-full rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none"
+          style={{ border: '1px solid #B3D9C4', background: '#fff', color: '#1C2B23' }}
+        />
+      </div>
 
       <div className="flex gap-1.5 mb-4 flex-wrap">
         {categories.map(c => (
           <button
             key={c}
             onClick={() => setCategory(c)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors capitalize ${
-              category === c
-                ? 'bg-green-600 text-white'
-                : 'bg-white border border-gray-200 text-gray-600 hover:bg-green-50'
-            }`}
+            className="px-3 py-1.5 rounded-full text-xs font-semibold transition-all capitalize"
+            style={{
+              background: category === c ? '#4A7C59' : '#fff',
+              color: category === c ? '#fff' : '#6A9E78',
+              border: `1px solid ${category === c ? '#4A7C59' : '#B3D9C4'}`,
+            }}
           >
             {c}
           </button>
         ))}
       </div>
 
-      <div className="grid gap-3">
+      <div className="grid gap-3 lg:grid-cols-2 lg:items-start">
         {filtered.map(plant => (
           <PlantCard key={plant.id} plant={plant} />
         ))}
         {filtered.length === 0 && (
-          <p className="text-center text-gray-400 py-8">Няма намерени растения</p>
+          <p className="text-center py-8 text-sm lg:col-span-2" style={{ color: '#9CA3AF' }}>Няма намерени растения</p>
         )}
       </div>
     </div>
   )
 }
+
+const tabDefs = [
+  { id: 'water', label: 'Поливане', Icon: Droplets, active: { background: '#EFF8FF', color: '#2563EB' } },
+  { id: 'fertilize', label: 'Торене', Icon: Sprout, active: { background: '#E8F5F0', color: '#1E5C3A' } },
+  { id: 'pest', label: 'Защита', Icon: Bug, active: { background: '#FDF3DC', color: '#7A4A00' } },
+]
 
 function PlantCard({ plant }) {
   const [tab, setTab] = useState('water')
@@ -68,101 +82,84 @@ function PlantCard({ plant }) {
     : `На ${w.frequency_days} дни`
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="rounded-2xl overflow-hidden" style={{ background: '#fff', border: '1px solid #D4EDE0' }}>
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-green-50 transition-colors text-left"
+        className="w-full flex items-center gap-3 px-4 py-3.5 text-left"
       >
-        <span className="text-2xl">{plant.emoji}</span>
-        <div className="flex-1">
-          <div className="font-semibold text-gray-800">{plant.name}</div>
-          <div className="text-xs text-gray-400 capitalize flex gap-2">
-            <span>💧 {waterLabel}</span>
-            <span>·</span>
-            <span>🌱 {freqLabel}</span>
+        <span className="text-2xl leading-none">{plant.emoji}</span>
+        <div className="flex-1 min-w-0">
+          <div className="font-semibold text-sm" style={{ color: '#1C2B23' }}>{plant.name}</div>
+          <div className="text-xs flex items-center gap-2 mt-0.5" style={{ color: '#9CA3AF' }}>
+            <span className="flex items-center gap-1"><Droplets size={11} /> {waterLabel}</span>
+            <span className="flex items-center gap-1"><Sprout size={11} /> {freqLabel}</span>
           </div>
         </div>
-        <span className="text-gray-300 text-xs">{open ? '▲' : '▼'}</span>
+        {open
+          ? <ChevronUp size={16} style={{ color: '#B3D9C4' }} />
+          : <ChevronDown size={16} style={{ color: '#B3D9C4' }} />}
       </button>
 
       {open && (
-        <div className="border-t border-gray-100">
-          <div className="flex border-b border-gray-100">
-            <button
-              onClick={() => setTab('water')}
-              className={`flex-1 py-2 text-xs font-medium transition-colors ${
-                tab === 'water' ? 'bg-blue-50 text-blue-600 border-b-2 border-blue-400' : 'text-gray-500'
-              }`}
-            >
-              💧 Поливане
-            </button>
-            <button
-              onClick={() => setTab('fertilize')}
-              className={`flex-1 py-2 text-xs font-medium transition-colors ${
-                tab === 'fertilize' ? 'bg-green-50 text-green-600 border-b-2 border-green-500' : 'text-gray-500'
-              }`}
-            >
-              🌱 Торене
-            </button>
-            <button
-              onClick={() => setTab('pest')}
-              className={`flex-1 py-2 text-xs font-medium transition-colors ${
-                tab === 'pest' ? 'bg-orange-50 text-orange-600 border-b-2 border-orange-400' : 'text-gray-500'
-              }`}
-            >
-              🐛 Защита
-            </button>
+        <div style={{ borderTop: '1px solid #F0EBE3' }}>
+          <div className="flex" style={{ borderBottom: '1px solid #F0EBE3' }}>
+            {tabDefs.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className="flex-1 py-2 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                style={tab === t.id ? t.active : { color: '#9CA3AF' }}
+              >
+                <t.Icon size={13} /> {t.label}
+              </button>
+            ))}
           </div>
 
           {tab === 'water' && (
-            <div className="p-4 bg-blue-50">
+            <div className="p-4" style={{ background: '#F8FBFE' }}>
               <div className="grid grid-cols-2 gap-2 mb-3">
-                <Info label="Честота" value={waterLabel} color="blue" />
-                <Info label="Количество" value={w.amount} color="blue" />
+                <Info label="Честота" value={waterLabel} />
+                <Info label="Количество" value={w.amount} />
               </div>
-              <div className="text-xs text-gray-600 bg-white rounded-xl p-3 border border-blue-100">
-                💡 {w.notes}
-              </div>
+              <Note Icon={Lightbulb} text={w.notes} />
             </div>
           )}
 
           {tab === 'fertilize' && (
-            <div className="p-4 bg-green-50">
+            <div className="p-4" style={{ background: '#F7FBF8' }}>
               <div className="grid grid-cols-2 gap-2 mb-3">
-                <Info label="Честота" value={freqLabel} color="green" />
-                <Info label="Сезон" value={f.seasons.join(', ')} color="green" />
-                <Info label="Тор" value={f.fertilizer_type} color="green" />
-                <Info label="Доза" value={f.dose} color="green" />
+                <Info label="Честота" value={freqLabel} />
+                <Info label="Сезон" value={f.seasons.join(', ')} />
+                <Info label="Тор" value={f.fertilizer_type} />
+                <Info label="Доза" value={f.dose} />
               </div>
-              <div className="text-xs text-gray-600 bg-white rounded-xl p-3 border border-green-100">
-                💡 {f.notes}
-              </div>
+              <Note Icon={Lightbulb} text={f.notes} />
             </div>
           )}
 
           {tab === 'pest' && (
-            <div className="p-4 bg-orange-50">
+            <div className="p-4" style={{ background: '#FDFAF3' }}>
               <div className="mb-3">
-                <div className="text-xs font-semibold text-orange-700 mb-1.5">Чести проблеми</div>
+                <div className="text-xs font-semibold mb-1.5" style={{ color: '#7A4A00' }}>Чести проблеми</div>
                 <div className="flex flex-wrap gap-1.5">
                   {plant.pest_control.pests.map((p, i) => (
-                    <span key={i} className="bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full">{p}</span>
+                    <span key={i} className="text-xs px-2 py-1 rounded-full"
+                      style={{ background: '#FDF3DC', color: '#7A4A00' }}>{p}</span>
                   ))}
                 </div>
               </div>
               <div className="mb-3">
-                <div className="text-xs font-semibold text-green-700 mb-1.5">🌿 Натурални методи</div>
+                <div className="text-xs font-semibold mb-1.5" style={{ color: '#1E5C3A' }}>Натурални методи</div>
                 <div className="space-y-1.5">
                   {plant.pest_control.natural.map((n, i) => (
-                    <div key={i} className="bg-white rounded-xl px-3 py-2 text-xs text-gray-700 border border-orange-100">
-                      ✓ {n}
+                    <div key={i} className="rounded-xl px-3 py-2 text-xs flex items-start gap-1.5"
+                      style={{ background: '#fff', border: '1px solid #E8E3D9', color: '#1C2B23' }}>
+                      <Check size={12} className="shrink-0 mt-0.5" style={{ color: '#4A7C59' }} /> {n}
                     </div>
                   ))}
                 </div>
               </div>
-              <div className="text-xs text-gray-600 bg-white rounded-xl p-3 border border-orange-100">
-                🛡️ {plant.pest_control.prevention}
-              </div>
+              <Note Icon={Shield} text={plant.pest_control.prevention} />
             </div>
           )}
         </div>
@@ -171,15 +168,21 @@ function PlantCard({ plant }) {
   )
 }
 
-function Info({ label, value, color }) {
-  const colors = {
-    green: 'border-green-100',
-    blue: 'border-blue-100',
-  }
+function Info({ label, value }) {
   return (
-    <div className={`bg-white rounded-xl p-2.5 border ${colors[color]}`}>
-      <div className="text-xs text-gray-400">{label}</div>
-      <div className="text-gray-700 font-medium text-xs mt-0.5">{value}</div>
+    <div className="rounded-xl p-2.5" style={{ background: '#fff', border: '1px solid #E8E3D9' }}>
+      <div className="text-xs" style={{ color: '#9CA3AF' }}>{label}</div>
+      <div className="font-medium text-xs mt-0.5" style={{ color: '#1C2B23' }}>{value}</div>
+    </div>
+  )
+}
+
+function Note({ Icon, text }) {
+  return (
+    <div className="text-xs rounded-xl p-3 flex items-start gap-2"
+      style={{ background: '#fff', border: '1px solid #E8E3D9', color: '#1C2B23' }}>
+      <Icon size={13} className="shrink-0 mt-0.5" style={{ color: '#C97D0E' }} />
+      <span>{text}</span>
     </div>
   )
 }

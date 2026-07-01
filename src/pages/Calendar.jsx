@@ -1,4 +1,16 @@
 import { useState } from 'react'
+import { Sprout, Flower2, ShoppingBasket, ListChecks } from 'lucide-react'
+import springImg from '../assets/spring.png'
+import summerImg from '../assets/summer.png'
+import autumnImg from '../assets/autumn.png'
+import winterImg from '../assets/winter.png'
+
+const seasonImg = (monthIndex) => {
+  if ([2, 3, 4].includes(monthIndex)) return springImg
+  if ([5, 6, 7].includes(monthIndex)) return summerImg
+  if ([8, 9, 10].includes(monthIndex)) return autumnImg
+  return winterImg
+}
 
 const months = [
   {
@@ -9,7 +21,7 @@ const months = [
     tasks: [
       'Планирай градината за новата година',
       'Поръчай семена и луковици',
-      'Режи овощните дървета в мраз (без снег)',
+      'Режи овощните дървета в мраз (без сняг)',
       'Защити нежните растения с агрил',
       'Провери запасите от луковици в мазето',
     ]
@@ -119,7 +131,7 @@ const months = [
   {
     name: 'Октомври', short: 'Окт',
     sow: [],
-    plant: ['🧄 Чесън', '🌷 Лале (луковици)', 'narcissus Нарцис (луковици)', '🌸 Зюмбюл (луковици)'],
+    plant: ['🧄 Чесън', '🌷 Лале (луковици)', '🌼 Нарцис (луковици)', '🌸 Зюмбюл (луковици)'],
     harvest: ['🎃 Тикви', '🍎 Ябълки (зимни)', '🍇 Грозде (последно)', '🥬 Спанак', '🥗 Маруля'],
     tasks: [
       'Засади пролетни луковици преди замразяване',
@@ -164,8 +176,18 @@ export default function Calendar() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-green-800 mb-1">Градински календар</h1>
-      <p className="text-gray-500 mb-4 text-sm">Какво да правим всеки месец в България</p>
+      <div className="flex items-center gap-4 mb-4">
+        <div>
+          <h1 style={{ color: '#1E3A2F' }}>Градински календар</h1>
+          <p className="text-sm mt-0.5" style={{ color: '#6A9E78' }}>Какво да правим всеки месец в България</p>
+        </div>
+        <img
+          key={selected}
+          src={seasonImg(selected)}
+          alt="сезон"
+          className="anim-season w-24 h-24 object-contain ml-auto shrink-0"
+        />
+      </div>
 
       {/* Месечни табове */}
       <div className="flex overflow-x-auto gap-1.5 pb-2 mb-4 scrollbar-hide">
@@ -173,34 +195,34 @@ export default function Calendar() {
           <button
             key={i}
             onClick={() => setSelected(i)}
-            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-              selected === i
-                ? 'bg-green-600 text-white'
-                : i === currentMonth
-                ? 'bg-green-100 text-green-700 border border-green-300'
-                : 'bg-white border border-gray-200 text-gray-600'
-            }`}
+            className="shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
+            style={{
+              background: selected === i ? '#4A7C59' : i === currentMonth ? '#D4EDE0' : '#fff',
+              color: selected === i ? '#fff' : i === currentMonth ? '#1E3A2F' : '#6A9E78',
+              border: `1px solid ${selected === i ? '#4A7C59' : '#B3D9C4'}`,
+            }}
           >
             {mo.short}
           </button>
         ))}
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-3 lg:items-start">
         {m.sow.length > 0 && (
-          <Section title="Засей" icon="🌱" color="green" items={m.sow} />
+          <Section title="Засей" Icon={Sprout} color="green" items={m.sow} />
         )}
         {m.plant.length > 0 && (
-          <Section title="Засади" icon="🪴" color="emerald" items={m.plant} />
+          <Section title="Засади" Icon={Flower2} color="emerald" items={m.plant} />
         )}
         {m.harvest.length > 0 && (
-          <Section title="Прибери реколта" icon="🧺" color="orange" items={m.harvest} />
+          <Section title="Прибери реколта" Icon={ShoppingBasket} color="orange" items={m.harvest} />
         )}
-        <Section title="Задачи" icon="📋" color="blue" items={m.tasks} />
+        <Section title="Задачи" Icon={ListChecks} color="blue" items={m.tasks} />
 
         {m.sow.length === 0 && m.plant.length === 0 && m.harvest.length === 0 && (
-          <div className="bg-gray-50 rounded-2xl border border-gray-100 p-4 text-center text-gray-400 text-sm">
-            Месецът е за почивка и планиране 🌿
+          <div className="rounded-2xl p-4 text-center text-sm"
+            style={{ background: '#fff', border: '1px solid #D4EDE0', color: '#6A9E78' }}>
+            Месецът е за почивка и планиране
           </div>
         )}
       </div>
@@ -208,28 +230,24 @@ export default function Calendar() {
   )
 }
 
-function Section({ title, icon, color, items }) {
-  const colors = {
-    green: 'bg-green-50 border-green-100 text-green-700',
-    emerald: 'bg-emerald-50 border-emerald-100 text-emerald-700',
-    orange: 'bg-orange-50 border-orange-100 text-orange-700',
-    blue: 'bg-blue-50 border-blue-100 text-blue-700',
-  }
-  const dotColors = {
-    green: 'bg-green-400',
-    emerald: 'bg-emerald-400',
-    orange: 'bg-orange-400',
-    blue: 'bg-blue-400',
-  }
+const sectionTheme = {
+  green:   { bg: '#D4EDE0', border: '#B3D9C4', text: '#1E3A2F', dot: '#4A7C59' },
+  emerald: { bg: '#E8F5F0', border: '#A8D5BE', text: '#1E3A2F', dot: '#4A7C59' },
+  orange:  { bg: '#FDF3DC', border: '#F5D78E', text: '#7A4A00', dot: '#C97D0E' },
+  blue:    { bg: '#F0F7FF', border: '#BFDBFE', text: '#1C3A5E', dot: '#3B82F6' },
+}
+
+function Section({ title, Icon, color, items }) {
+  const t = sectionTheme[color]
   return (
-    <div className={`rounded-2xl border p-4 ${colors[color]}`}>
-      <div className="font-semibold text-sm mb-2.5 flex items-center gap-1.5">
-        <span>{icon}</span> {title}
+    <div className="rounded-2xl p-4" style={{ background: t.bg, border: `1px solid ${t.border}` }}>
+      <div className="font-semibold text-sm mb-2.5 flex items-center gap-1.5" style={{ color: t.text }}>
+        <Icon size={15} /> {title}
       </div>
       <div className="space-y-1.5">
         {items.map((item, i) => (
-          <div key={i} className="flex items-start gap-2 text-sm">
-            <span className={`w-1.5 h-1.5 rounded-full mt-1.5 shrink-0 ${dotColors[color]}`} />
+          <div key={i} className="flex items-start gap-2 text-sm" style={{ color: t.text }}>
+            <span className="w-1.5 h-1.5 rounded-full mt-1.5 shrink-0" style={{ background: t.dot }} />
             <span>{item}</span>
           </div>
         ))}

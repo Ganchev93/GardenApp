@@ -1,13 +1,48 @@
 @import "tailwindcss";
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
+@theme {
+  --color-forest:    #1E3A2F;
+  --color-sage:      #4A7C59;
+  --color-sage-light:#6A9E78;
+  --color-mint:      #D4EDE0;
+  --color-mint-dark: #B3D9C4;
+  --color-parchment: #F5F2EC;
+  --color-amber:     #C97D0E;
+  --color-amber-light:#FDF3DC;
+  --color-gtext:     #1C2B23;
+
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body:    'Plus Jakarta Sans', system-ui, sans-serif;
 }
 
 body {
-  font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
-  background: #f0fdf4;
-  color: #1a1a1a;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  background: #EDE8DF;
+  color: #1C2B23;
 }
+
+h1, h2, h3 {
+  font-family: 'Fraunces', Georgia, serif !important;
+}
+
+h1 { font-size: 1.6rem; font-weight: 600; line-height: 1.2; }
+h2 { font-size: 1.05rem; font-weight: 600; }
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes seasonSwap {
+  from { opacity: 0; transform: translateX(14px) scale(0.92); }
+  to   { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes urgentPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3); }
+  50%       { box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+}
+
+.anim-fade    { animation: fadeSlideIn 0.35s ease-out both; }
+.anim-season  { animation: seasonSwap  0.3s ease-out both; }
+.anim-urgent  { animation: urgentPulse 2s ease-in-out infinite; }

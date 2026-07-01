@@ -9,18 +9,19 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icon.svg'],
+      includeAssets: ['icon.svg', 'favicon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'GardenCare',
         short_name: 'GardenCare',
         description: 'Следи поливането и торенето на растенията си',
-        theme_color: '#16a34a',
-        background_color: '#f0fdf4',
+        theme_color: '#1E3A2F',
+        background_color: '#EDE8DF',
         display: 'standalone',
-        orientation: 'portrait',
         start_url: '/',
         icons: [
-          { src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }
+          { src: 'pwa-192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'pwa-512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'pwa-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ]
       },
       workbox: {
