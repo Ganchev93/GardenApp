@@ -14,7 +14,8 @@ function dayLabel(days, due) {
 
 const catStyle = {
   'зеленчук': { bg: '#D4EDE0', color: '#1E3A2F' },
-  'плод':     { bg: '#FDF3DC', color: '#7A4A00' },
+  'дърво':    { bg: '#FDF3DC', color: '#7A4A00' },
+  'храст':    { bg: '#EDE4F5', color: '#4A2A6B' },
   'билка':    { bg: '#E8F5F0', color: '#1E5C3A' },
   'цвете':    { bg: '#FDE8F0', color: '#7A1D45' },
 }
