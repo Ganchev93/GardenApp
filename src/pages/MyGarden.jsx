@@ -47,7 +47,7 @@ export default function MyGarden() {
       watering_frequency_days: plant.watering.frequency_days,
       watering_amount: plant.watering.amount,
       lastFertilized,
-      nextFertilizing: addDays(lastFertilized, plant.fertilizing.frequency_days),
+      nextFertilizing: plant.fertilizing.frequency_days === 0 ? null : addDays(lastFertilized, plant.fertilizing.frequency_days),
       frequency_days: plant.fertilizing.frequency_days,
       fertilizer_type: plant.fertilizing.fertilizer_type,
       dose: plant.fertilizing.dose,
@@ -63,17 +63,17 @@ export default function MyGarden() {
   }
   function markFertilized(uid) {
     setMyPlants(prev => prev.map(p => p.uid !== uid ? p : {
-      ...p, lastFertilized: today, nextFertilizing: addDays(today, p.frequency_days),
+      ...p, lastFertilized: today, nextFertilizing: p.frequency_days === 0 ? null : addDays(today, p.frequency_days),
     }))
   }
   function removePlant(uid) { setMyPlants(prev => prev.filter(p => p.uid !== uid)) }
   function updateNote(uid, note) { setMyPlants(prev => prev.map(p => p.uid !== uid ? p : { ...p, note })) }
 
-  const urgentCount = myPlants.filter(p => p.nextWatering <= today || p.nextFertilizing <= today).length
+  const urgentCount = myPlants.filter(p => p.nextWatering <= today || (p.nextFertilizing && p.nextFertilizing <= today)).length
 
   const sorted = [...myPlants].sort((a, b) => {
-    const aU = a.nextWatering <= today || a.nextFertilizing <= today
-    const bU = b.nextWatering <= today || b.nextFertilizing <= today
+    const aU = a.nextWatering <= today || (a.nextFertilizing && a.nextFertilizing <= today)
+    const bU = b.nextWatering <= today || (b.nextFertilizing && b.nextFertilizing <= today)
     if (aU && !bU) return -1
     if (!aU && bU) return 1
     return new Date(a.nextWatering) - new Date(b.nextWatering)
@@ -163,10 +163,11 @@ function PlantCard({ plant, today, onMarkWatered, onMarkFertilized, onRemove, on
   const [editingNote, setEditingNote] = useState(false)
   const [noteVal, setNoteVal] = useState(plant.note || '')
 
+  const noFertilize = !plant.nextFertilizing
   const waterDue = plant.nextWatering <= today
-  const fertilizeDue = plant.nextFertilizing <= today
+  const fertilizeDue = !noFertilize && plant.nextFertilizing <= today
   const waterDays = Math.ceil((new Date(plant.nextWatering) - new Date()) / 86400000)
-  const fertilizeDays = Math.ceil((new Date(plant.nextFertilizing) - new Date()) / 86400000)
+  const fertilizeDays = noFertilize ? null : Math.ceil((new Date(plant.nextFertilizing) - new Date()) / 86400000)
   const isUrgent = waterDue || fertilizeDue
 
   const catalogPlant = catalog.find(p => p.id === plant.plantId)
@@ -230,15 +231,19 @@ function PlantCard({ plant, today, onMarkWatered, onMarkFertilized, onRemove, on
         <Sprout size={16} className="shrink-0" style={{ color: fertilizeDue ? '#C97D0E' : '#B3D9C4' }} />
         <div className="flex-1 min-w-0 overflow-hidden">
           <span className="text-sm font-medium" style={{ color: fertilizeDue ? '#C97D0E' : '#1C2B23' }}>
-            {dayLabel(fertilizeDays, fertilizeDue)}
+            {noFertilize ? 'Не се тори' : dayLabel(fertilizeDays, fertilizeDue)}
           </span>
-          <span className="text-xs ml-2 truncate" style={{ color: '#9CA3AF' }}>{plant.fertilizer_type.split(' ').slice(0,3).join(' ')}</span>
+          <span className="text-xs ml-2 truncate" style={{ color: '#9CA3AF' }}>
+            {noFertilize ? 'по нужда' : plant.fertilizer_type.split(' ').slice(0,3).join(' ')}
+          </span>
         </div>
-        <button onClick={() => onMarkFertilized(plant.uid)}
-          className="text-xs px-3 py-1 rounded-lg font-semibold shrink-0 transition-transform active:scale-90"
-          style={{ background: fertilizeDue ? '#C97D0E' : '#EDE8DF', color: fertilizeDue ? '#fff' : '#6A9E78' }}>
-          Торено
-        </button>
+        {!noFertilize && (
+          <button onClick={() => onMarkFertilized(plant.uid)}
+            className="text-xs px-3 py-1 rounded-lg font-semibold shrink-0 transition-transform active:scale-90"
+            style={{ background: fertilizeDue ? '#C97D0E' : '#EDE8DF', color: fertilizeDue ? '#fff' : '#6A9E78' }}>
+            Торено
+          </button>
+        )}
       </div>
 
       {/* Вредители */}

@@ -71,7 +71,9 @@ function PlantCard({ plant }) {
   const [open, setOpen] = useState(false)
   const { fertilizing: f, watering: w } = plant
 
-  const freqLabel = f.frequency_days === 365
+  const freqLabel = f.frequency_days === 0
+    ? 'Не се тори (по нужда)'
+    : f.frequency_days === 365
     ? 'Веднъж годишно'
     : f.frequency_days === 1
     ? 'Всеки ден'

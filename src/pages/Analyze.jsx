@@ -124,7 +124,7 @@ export default function Analyze() {
       watering_frequency_days: plant.watering.frequency_days,
       watering_amount: plant.watering.amount,
       lastFertilized: today,
-      nextFertilizing: addDays(today, plant.fertilizing.frequency_days),
+      nextFertilizing: plant.fertilizing.frequency_days === 0 ? null : addDays(today, plant.fertilizing.frequency_days),
       frequency_days: plant.fertilizing.frequency_days,
       fertilizer_type: plant.fertilizing.fertilizer_type,
       dose: plant.fertilizing.dose,
