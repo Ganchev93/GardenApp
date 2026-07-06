@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { Droplets, Sprout, Bug, X, NotebookPen, Plus } from 'lucide-react'
+import { Droplets, Sprout, Bug, X, NotebookPen, Plus, CalendarDays } from 'lucide-react'
 import { plants as catalog } from '../data/plants'
+import { ACTIVITIES } from '../components/PlantTimeline'
 import { loadGarden, saveGarden, addDays } from '../lib/garden'
 import emptyBedImg from '../assets/empty-bed.png'
 
@@ -136,6 +137,8 @@ export default function MyGarden() {
           </div>
         </div>
       )}
+
+      <ThisMonth myPlants={myPlants} />
 
       {myPlants.length === 0 && (
         <div className="text-center py-6" style={{ color: '#6A9E78' }}>
@@ -286,6 +289,44 @@ function PlantCard({ plant, today, onMarkWatered, onMarkFertilized, onRemove, on
           }
         </div>
       )}
+    </div>
+  )
+}
+
+const MONTH_NAMES = ['януари', 'февруари', 'март', 'април', 'май', 'юни', 'юли', 'август', 'септември', 'октомври', 'ноември', 'декември']
+
+function ThisMonth({ myPlants }) {
+  const month = new Date().getMonth() + 1
+  const seen = new Set()
+  const unique = myPlants.filter(p => !seen.has(p.plantId) && seen.add(p.plantId))
+  const groups = ACTIVITIES
+    .map(a => ({
+      ...a,
+      items: unique.filter(p => catalog.find(c => c.id === p.plantId)?.calendar?.[a.key]?.includes(month)),
+    }))
+    .filter(g => g.items.length > 0)
+
+  if (groups.length === 0) return null
+
+  return (
+    <div className="rounded-2xl p-4 mb-4" style={{ background: '#fff', border: '1px solid #D4EDE0' }}>
+      <div className="font-semibold text-sm mb-2.5 flex items-center gap-1.5" style={{ color: '#1E3A2F' }}>
+        <CalendarDays size={15} /> Този месец ({MONTH_NAMES[month - 1]})
+      </div>
+      <div className="space-y-2">
+        {groups.map(g => (
+          <div key={g.key} className="flex items-start gap-2">
+            <span className="text-xs font-semibold w-14 shrink-0 mt-1" style={{ color: g.color }}>{g.short}</span>
+            <div className="flex flex-wrap gap-1.5">
+              {g.items.map(p => (
+                <span key={p.plantId} className="text-xs px-2 py-1 rounded-full" style={{ background: '#F5F2EC', color: '#1C2B23' }}>
+                  {p.emoji} {p.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
