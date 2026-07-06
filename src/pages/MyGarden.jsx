@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Droplets, Sprout, Bug, X, NotebookPen, Plus, CalendarDays } from 'lucide-react'
+import { Droplets, Sprout, Bug, X, NotebookPen, Plus, CalendarDays, Search } from 'lucide-react'
 import { plants as catalog } from '../data/plants'
 import { ACTIVITIES } from '../components/PlantTimeline'
 import { loadGarden, saveGarden, addDays } from '../lib/garden'
@@ -25,6 +25,7 @@ export default function MyGarden() {
   const [myPlants, setMyPlants] = useState(loadGarden)
   const [showAdd, setShowAdd] = useState(false)
   const [selectedId, setSelectedId] = useState('')
+  const [query, setQuery] = useState('')
   const [lastWatered, setLastWatered] = useState(new Date().toISOString().slice(0, 10))
   const [lastFertilized, setLastFertilized] = useState(new Date().toISOString().slice(0, 10))
   const [photoView, setPhotoView] = useState(null)
@@ -32,6 +33,7 @@ export default function MyGarden() {
   useEffect(() => { saveGarden(myPlants) }, [myPlants])
 
   const today = new Date().toISOString().slice(0, 10)
+  const matches = catalog.filter(p => p.name.toLowerCase().includes(query.toLowerCase())).slice(0, 8)
 
   function addPlant() {
     if (!selectedId) return
@@ -55,6 +57,7 @@ export default function MyGarden() {
     }])
     setShowAdd(false)
     setSelectedId('')
+    setQuery('')
   }
 
   function markWatered(uid) {
@@ -107,12 +110,37 @@ export default function MyGarden() {
       {showAdd && (
         <div className="rounded-2xl p-4 mb-4" style={{ background: '#fff', border: '1px solid #D4EDE0' }}>
           <h3 className="font-semibold mb-3" style={{ color: '#1C2B23' }}>Добави растение</h3>
-          <select value={selectedId} onChange={e => setSelectedId(e.target.value)}
-            className="w-full rounded-xl px-3 py-2.5 text-sm mb-3 focus:outline-none"
-            style={{ border: '1px solid #B3D9C4', color: '#1C2B23', background: '#F5F2EC' }}>
-            <option value="">-- Избери растение --</option>
-            {catalog.map(p => <option key={p.id} value={p.id}>{p.emoji} {p.name}</option>)}
-          </select>
+          <div className="relative mb-3">
+            <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2" style={{ color: '#B3D9C4' }} />
+            <input
+              type="text"
+              placeholder="Търси растение..."
+              value={query}
+              onChange={e => { setQuery(e.target.value); setSelectedId('') }}
+              className="w-full rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none"
+              style={{ border: `1px solid ${selectedId ? '#4A7C59' : '#B3D9C4'}`, background: '#F5F2EC', color: '#1C2B23' }}
+            />
+            {query && !selectedId && (
+              <div className="absolute left-0 right-0 top-full mt-1 rounded-xl overflow-hidden z-20 max-h-64 overflow-y-auto"
+                style={{ background: '#fff', border: '1px solid #B3D9C4', boxShadow: '0 8px 24px rgba(0,0,0,0.08)' }}>
+                {matches.map(p => {
+                  const cat = catStyle[p.category] || catStyle['зеленчук']
+                  return (
+                    <button key={p.id} onClick={() => { setSelectedId(String(p.id)); setQuery(p.name) }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-left text-sm hover:opacity-70"
+                      style={{ color: '#1C2B23' }}>
+                      <span>{p.emoji}</span>
+                      <span className="flex-1">{p.name}</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: cat.bg, color: cat.color }}>{p.category}</span>
+                    </button>
+                  )
+                })}
+                {matches.length === 0 && (
+                  <div className="px-3 py-2 text-sm" style={{ color: '#9CA3AF' }}>Няма намерени растения</div>
+                )}
+              </div>
+            )}
+          </div>
           <div className="grid grid-cols-2 gap-2 mb-3">
             <div>
               <label className="block text-xs mb-1" style={{ color: '#6A9E78' }}>Последно поливане</label>
