@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Search, Droplets, Sprout, Bug, ChevronDown, ChevronUp, Lightbulb, Shield, Check } from 'lucide-react'
+import { Search, Droplets, Sprout, Bug, ChevronDown, ChevronUp, Lightbulb, Shield, Check, CalendarDays } from 'lucide-react'
 import { plants, categories } from '../data/plants'
+import PlantTimeline from '../components/PlantTimeline'
 
 export default function Plants() {
   const [search, setSearch] = useState('')
@@ -64,12 +65,14 @@ const tabDefs = [
   { id: 'water', label: 'Поливане', Icon: Droplets, active: { background: '#EFF8FF', color: '#2563EB' } },
   { id: 'fertilize', label: 'Торене', Icon: Sprout, active: { background: '#E8F5F0', color: '#1E5C3A' } },
   { id: 'pest', label: 'Защита', Icon: Bug, active: { background: '#FDF3DC', color: '#7A4A00' } },
+  { id: 'calendar', label: 'Календар', Icon: CalendarDays, active: { background: '#EDE4F5', color: '#4A2A6B' } },
 ]
 
 function PlantCard({ plant }) {
   const [tab, setTab] = useState('water')
   const [open, setOpen] = useState(false)
   const { fertilizing: f, watering: w } = plant
+  const visibleTabs = plant.calendar ? tabDefs : tabDefs.filter(t => t.id !== 'calendar')
 
   const freqLabel = f.frequency_days === 0
     ? 'Не се тори (по нужда)'
@@ -105,7 +108,7 @@ function PlantCard({ plant }) {
       {open && (
         <div style={{ borderTop: '1px solid #F0EBE3' }}>
           <div className="flex" style={{ borderBottom: '1px solid #F0EBE3' }}>
-            {tabDefs.map(t => (
+            {visibleTabs.map(t => (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
@@ -162,6 +165,12 @@ function PlantCard({ plant }) {
                 </div>
               </div>
               <Note Icon={Shield} text={plant.pest_control.prevention} />
+            </div>
+          )}
+
+          {tab === 'calendar' && plant.calendar && (
+            <div className="p-4" style={{ background: '#FBF9FD' }}>
+              <PlantTimeline calendar={plant.calendar} />
             </div>
           )}
         </div>
