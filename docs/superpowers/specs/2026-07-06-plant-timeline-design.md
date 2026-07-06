@@ -19,30 +19,31 @@ calendar: {
   sow: [3, 4],        // months 1-12, сеитба (direct or indoor)
   plant: [5],         // засаждане / разсад / луковици
   prune: [2, 3],      // резитба
-  harvest: [7, 8, 9], // беритба; for flowers this is bloom (цъфтеж)
+  bloom: [6, 7],      // цъфтеж (ornamentals; also edibles where flowers are picked)
+  harvest: [7, 8, 9], // беритба
   note: "Засаждане навън след 15 май (последен мраз)" // optional, one short BG string
 }
 ```
 
-- Empty activities are omitted (no empty arrays).
-- Months may wrap the year boundary (e.g. prune: [11, 12, 1, 2]) — stored as plain month numbers, no special encoding.
-- **Scope now:** fill `calendar` for the round-2/round-3 plants (the ones covered by scratchpad research reports, roughly ids 61–121) by extracting from those reports.
-- **Deferred:** the original pre-round-2 plants get no `calendar` field for now; a later light research round will fill them. UI must handle the field being absent.
+- Empty activities are omitted (no empty arrays). A plant may have both `bloom` and `harvest` (e.g. Черен бъз — flowers and berries are both picked).
+- Months may wrap the year boundary (e.g. prune: [1, 2, 12]) — stored as plain ascending month numbers, no special encoding.
+- **Scope now:** fill `calendar` for the 30 round-3 plants (ids 92–121). Only the round-3 scratchpad reports survived; the round-2 reports were lost with their session.
+- **Deferred:** plants ids 1–91 get no `calendar` field for now; a later light research round will fill them. UI must handle the field being absent.
 
 ## Component: `PlantTimeline`
 
 New file `src/components/PlantTimeline.jsx`.
 
-**Props:** `calendar` (the plant's calendar object), `category` (plant category string, used for the harvest-row label).
+**Props:** `calendar` (the plant's calendar object). Row labels derive from the present keys — no category logic.
 
 **Rendering (CSS grid, no SVG):**
 - Header row: 12 month initials (Я Ф М А М Ю Ю А С О Н Д), current month highlighted.
-- One row per present activity (max 4), each row a 12-column grid; active months are filled segments in the activity color, inactive are faint track cells.
-- Activity colors reuse the Calendar.jsx section theme: sow `#4A7C59` (green), plant `#A8D5BE`-family (emerald), harvest `#C97D0E` (orange), prune `#3B82F6` (blue).
+- One row per present activity (max 5), each row a 12-column grid; active months are filled segments in the activity color, inactive are faint track cells.
+- Activity colors: sow `#4A7C59` (green), plant `#7BB88F` (light green), prune `#3B82F6` (blue), bloom `#C75B8E` (pink), harvest `#C97D0E` (orange).
 - Vertical "today" marker line spanning all rows at the current month position.
 - Below the strip: a status line — "Сега: време за беритба" (joins all activities active in the current month) or "Няма задачи този месец".
 - Tapping/clicking a segment shows the `note` (if any) under the status line; tapping again hides it. One shared note per plant, not per activity.
-- Row labels: Сеитба / Засаждане / Резитба / Беритба (Цъфтеж for category "цвете").
+- Row labels: Сеитба / Засаждане / Резитба / Цъфтеж / Беритба, one per present key.
 
 ## Integration
 
@@ -55,7 +56,7 @@ New file `src/components/PlantTimeline.jsx`.
 ### MyGarden.jsx — "Този месец" section
 
 - New section above the garden list, shown only when the garden is non-empty and at least one garden plant has calendar data with activity in the current month.
-- Groups the user's plants by activity for the current month: "Засей: …", "Засади: …", "Режи: …", "Бери: …" — each a row of emoji+name chips.
+- Groups the user's plants by activity for the current month: "Засей: …", "Засади: …", "Режи: …", "Цъфти: …", "Бери: …" — each a row of emoji+name chips, deduplicated by plant id.
 - Garden entries store only a plant reference; calendar is looked up from the catalog by plant id at render time (no localStorage migration needed). Existing garden entries keep working.
 
 ### MyGarden.jsx — search combobox
