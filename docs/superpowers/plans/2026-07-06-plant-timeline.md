@@ -21,10 +21,12 @@
 
 ---
 
-### Task 1: Calendar data for the 30 round-3 plants
+### Task 1: Calendar data for all plants — ALREADY DONE (commit d002c10)
+
+All 121 plants now carry the `calendar` field (round-4 research covered ids 1–91; round-3 data covered 92–121). Merged and committed before implementation started. Skip the steps below — they document the data shape only. Verify with `grep -c "calendar: {" src/data/plants.js` → `121`.
 
 **Files:**
-- Modify: `src/data/plants.js` (plants with ids 92–121 only)
+- Modify: `src/data/plants.js` (all plants — done)
 
 **Interfaces:**
 - Produces: optional `calendar` field on plant objects: `{ sow?: number[], plant?: number[], prune?: number[], bloom?: number[], harvest?: number[], note?: string }` — months are ascending integers 1-12. Consumed by Tasks 2–4 via `plant.calendar`.
