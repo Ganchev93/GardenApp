@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
-import { House, BookOpen, Sprout, CalendarDays, Camera, MessageCircle, Leaf } from 'lucide-react'
+import { House, BookOpen, Sprout, CalendarDays, Camera, MessageCircle, Leaf, LogOut } from 'lucide-react'
+import { signOut } from 'firebase/auth'
+import { auth } from './services/firebase'
 import Home from './pages/Home'
 import Plants from './pages/Plants'
 import MyGarden from './pages/MyGarden'
@@ -78,10 +80,29 @@ function Sidebar() {
           )
         })}
       </nav>
-      <p className="mt-auto px-3 text-xs" style={{ color: '#B3D9C4' }}>
-        Градински дневник
-      </p>
+      <div className="mt-auto">
+        <UserFooter />
+      </div>
     </aside>
+  )
+}
+
+function UserFooter() {
+  const { user } = useAuth()
+  return (
+    <div className="px-3 pt-3" style={{ borderTop: '1px solid #F0EBE3' }}>
+      <p className="text-xs truncate mb-2" style={{ color: '#6A9E78' }}>
+        {user?.displayName || user?.email}
+      </p>
+      <button
+        onClick={() => signOut(auth)}
+        className="flex items-center gap-2 text-sm font-medium"
+        style={{ color: '#9CA3AF' }}
+      >
+        <LogOut size={16} />
+        Изход
+      </button>
+    </div>
   )
 }
 
@@ -124,6 +145,14 @@ function AppInner() {
           <Route path="/chat" element={<Chat />} />
         </Routes>
       </div>
+      <button
+        onClick={() => signOut(auth)}
+        className="lg:hidden fixed top-4 right-4 z-50 w-9 h-9 rounded-full flex items-center justify-center"
+        style={{ background: '#fff', border: '1px solid #D4EDE0', color: '#6A9E78' }}
+        aria-label="Изход"
+      >
+        <LogOut size={16} />
+      </button>
       <Sidebar />
       <BottomNav />
     </div>

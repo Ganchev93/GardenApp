@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Check, Droplets, Sprout, BookOpen, Camera, ChevronRight } from 'lucide-react'
 import WeatherWidget from '../components/WeatherWidget'
 import { loadGarden, saveGarden, addDays, todayStr } from '../lib/garden'
+import { useAuth } from '../hooks/useAuth'
 import { plants as catalog } from '../data/plants'
 import gardenImg from '../assets/garden.png'
 
@@ -19,6 +20,8 @@ function daysLabel(n) {
 }
 
 export default function Home() {
+  const { user } = useAuth()
+  const firstName = (user?.displayName || '').split(' ')[0]
   const [myPlants, setMyPlants] = useState(loadGarden)
   const today = todayStr()
 
@@ -62,7 +65,7 @@ export default function Home() {
   return (
     <div>
       <div className="anim-fade mb-5">
-        <h1 style={{ color: '#1E3A2F' }}>{greeting()}</h1>
+        <h1 style={{ color: '#1E3A2F' }}>{greeting()}{firstName ? `, ${firstName}` : ''}</h1>
         <p className="text-sm mt-1 capitalize" style={{ color: '#6A9E78' }}>{dateLine}</p>
       </div>
 
