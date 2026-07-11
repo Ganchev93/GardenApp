@@ -7,6 +7,8 @@ import MyGarden from './pages/MyGarden'
 import Analyze from './pages/Analyze'
 import Chat from './pages/Chat'
 import Calendar from './pages/Calendar'
+import Auth from './pages/Auth'
+import { AuthProvider, useAuth } from './hooks/useAuth'
 import './index.css'
 
 function showDueNotification() {
@@ -128,10 +130,25 @@ function AppInner() {
   )
 }
 
+function ProtectedApp() {
+  const { user, loading } = useAuth()
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#EDE8DF' }}>
+        <Leaf size={28} style={{ color: '#4A7C59' }} />
+      </div>
+    )
+  }
+  if (!user) return <Auth />
+  return <AppInner />
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <AppInner />
+      <AuthProvider>
+        <ProtectedApp />
+      </AuthProvider>
     </BrowserRouter>
   )
 }
