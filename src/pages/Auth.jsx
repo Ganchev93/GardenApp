@@ -12,11 +12,16 @@ export default function Auth() {
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (mode === 'register' && password !== confirmPassword) {
+      setError('Паролите не съвпадат')
+      return
+    }
     setLoading(true)
     setError(null)
     try {
@@ -86,6 +91,17 @@ export default function Auth() {
             className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none"
             style={{ border: '1px solid #D4EDE0', color: '#1C2B23', background: '#F5F2EC' }}
           />
+          {mode === 'register' && (
+            <input
+              type="password"
+              placeholder="Потвърди паролата"
+              value={confirmPassword}
+              onChange={e => setConfirmPassword(e.target.value)}
+              required
+              className="w-full rounded-xl px-4 py-2.5 text-sm focus:outline-none"
+              style={{ border: '1px solid #D4EDE0', color: '#1C2B23', background: '#F5F2EC' }}
+            />
+          )}
           {error && <p className="text-xs" style={{ color: '#C0392B' }}>{error}</p>}
           <button
             type="submit"
