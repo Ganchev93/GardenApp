@@ -94,7 +94,7 @@ export default function Bed({
           <g key={i}>
             <line className="bad-link" x1={a.x} y1={a.y} x2={b.x} y2={b.y}
               stroke="#E74C3C" strokeWidth={2} strokeDasharray="7 7" opacity={0.8} pointerEvents="none" />
-            <g onClick={e => { e.stopPropagation(); onWarningTap(p) }} style={{ cursor: 'pointer' }}>
+            <g onClick={e => { e.stopPropagation(); onWarningTap(p, mx, my) }} style={{ cursor: 'pointer' }}>
               <circle cx={mx} cy={my} r={10} fill="#fff" stroke="#E74C3C" strokeWidth={1.5} />
               <text x={mx} y={my + 3.5} textAnchor="middle" fontSize="10" pointerEvents="none">⚠</text>
             </g>

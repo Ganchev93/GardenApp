@@ -119,6 +119,14 @@ export default function GardenScene({
   const [phaseOverride, setPhaseOverride] = useState(null)
   const [invalidBedId, setInvalidBedId] = useState(null)
   const [toast, setToast] = useState(null)
+  const [warnPopup, setWarnPopup] = useState(null)   // { text, wx, wy }
+
+  useEffect(() => {
+    if (!warnPopup) return
+    const close = () => setWarnPopup(null)
+    document.addEventListener('pointerdown', close)
+    return () => document.removeEventListener('pointerdown', close)
+  }, [warnPopup])
 
   function flash(msg) {
     setToast(msg)
@@ -588,13 +596,17 @@ export default function GardenScene({
             onPlantTap={tapGuard(entry => setSheet(entry))}
             onBedPointerDown={onBedPointerDown}
             onRemoveBed={onRemoveBed}
-            onWarningTap={tapGuard(p => {
+            onWarningTap={tapGuard((p, mx, my) => {
               const cat = catalogById[p.a.plantId]
               const catB = catalogById[p.b.plantId]
               const note = cat?.companions?.bad?.includes(catB?.name)
                 ? cat?.companions?.note
                 : catB?.companions?.note
-              flash(`⚠ ${p.a.name} и ${p.b.name} са лоши съседи${note ? ` — ${note}` : ' — раздалечи ги'}`)
+              setWarnPopup({
+                title: `${p.a.emoji} ${p.a.name} + ${p.b.emoji} ${p.b.name}`,
+                text: note || 'Лоши съседи — раздалечи ги в различни лехи.',
+                wx: mx, wy: my,
+              })
             })} />
         ))}
 
@@ -646,6 +658,23 @@ export default function GardenScene({
           </g>
         )}
       </svg>
+
+      {/* companion warning bubble — stays until next click anywhere */}
+      {warnPopup && (
+        <div className="absolute z-40 w-52 -translate-x-1/2 -translate-y-full pointer-events-none"
+          style={{
+            left: `${((warnPopup.wx - view.x) / view.w) * 100}%`,
+            top: `calc(${((warnPopup.wy - view.y) / vh) * 100}% - 14px)`,
+          }}>
+          <div className="rounded-2xl p-3"
+            style={{ background: '#fff', border: '1.5px solid #E74C3C', boxShadow: '0 8px 24px rgba(30,58,47,0.22)' }}>
+            <p className="text-xs font-semibold mb-1" style={{ color: '#B03A2E' }}>⚠ {warnPopup.title}</p>
+            <p className="text-xs leading-snug" style={{ color: '#1C2B23' }}>{warnPopup.text}</p>
+          </div>
+          <div className="mx-auto w-0 h-0"
+            style={{ borderLeft: '7px solid transparent', borderRight: '7px solid transparent', borderTop: '8px solid #E74C3C' }} />
+        </div>
+      )}
 
       {/* phase preview (bottom-right) */}
       <PhaseButton value={phaseOverride} onChange={setPhaseOverride} autoPhase={phase} />
