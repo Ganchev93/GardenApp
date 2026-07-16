@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { Plus, Pencil, Check, Fence, Clock, Sunrise, Sun, Sunset, Moon } from 'lucide-react'
+import { Plus, Pencil, Check, Fence, Clock, Sunrise, Sun, Sunset, Moon, TreePine, X } from 'lucide-react'
 import { plants as catalog } from '../../data/plants'
 import { badPairsInBeds } from '../../lib/companions'
 import { dayPhase } from '../../lib/growth'
-import { loadYard, saveYard, TILE, YARD_COLS, YARD_ROWS } from '../../lib/beds'
+import { loadYard, saveYard, loadPaths, savePaths, loadDecor, saveDecor, TILE, YARD_COLS, YARD_ROWS } from '../../lib/beds'
 import Bed, { bedSize, cellCenter } from './Bed'
 import Critters, { bloomSpotsFrom } from './Critters'
 import PlantPicker from './PlantPicker'
@@ -22,6 +22,48 @@ const PHASE_STYLE = {
 
 const GRASS_TONES = ['#CBE0AE', '#C3D9A4', '#D2E5B8']
 const grassTone = (r, c) => GRASS_TONES[(r * 7 + c * 13) % 3]
+
+const DECOR_TYPES = [
+  { type: 'tree', emoji: '🌳', size: 42, label: 'Дърво', sway: true },
+  { type: 'pine', emoji: '🌲', size: 40, label: 'Бор', sway: true },
+  { type: 'bush', emoji: '🌾', size: 26, label: 'Треви', sway: true },
+  { type: 'rock', emoji: '🪨', size: 26, label: 'Камък' },
+  { type: 'fountain', emoji: '⛲', size: 38, label: 'Фонтан' },
+  { type: 'shed', emoji: '🛖', size: 44, label: 'Барака' },
+  { type: 'bench', emoji: '🪑', size: 26, label: 'Пейка' },
+  { type: 'pot', emoji: '🪴', size: 26, label: 'Саксия' },
+]
+const decorByType = Object.fromEntries(DECOR_TYPES.map(d => [d.type, d]))
+
+// Deterministic per-tile lawn detail: tufts, wildflowers, pebbles
+function TileNoise({ r, c }) {
+  const h = (r * 73 + c * 151) % 23
+  if (h > 3) return null
+  const px = c * TILE + 10 + ((r * 31 + c * 17) % 3) * 14
+  const py = r * TILE + 14 + ((r * 13 + c * 41) % 4) * 10
+  if (h === 0) {
+    return (
+      <g pointerEvents="none">
+        {[[-3.2, 0], [3.2, 0], [0, -3.2], [0, 3.2]].map(([dx, dy], i) => (
+          <circle key={i} cx={px + dx} cy={py + dy} r={2} fill="#FDFBF4" />
+        ))}
+        <circle cx={px} cy={py} r={1.7} fill="#F2C94C" />
+      </g>
+    )
+  }
+  if (h <= 2) {
+    return (
+      <path pointerEvents="none" fill="none" stroke="#8FAE6F" strokeWidth={1.4} strokeLinecap="round"
+        d={`M${px} ${py} q1.5 -8 3 0 M${px + 4.5} ${py} q1.5 -9 3 0 M${px + 9} ${py} q1.5 -7 3 0`} />
+    )
+  }
+  return (
+    <g pointerEvents="none">
+      <ellipse cx={px} cy={py} rx={4} ry={2.8} fill="#B5AE9E" />
+      <ellipse cx={px - 1} cy={py - 1} rx={1.6} ry={1} fill="#CBC5B6" />
+    </g>
+  )
+}
 
 const STARS = [
   [120, 60], [340, 100], [560, 45], [760, 90], [980, 55], [1100, 120],
@@ -61,6 +103,10 @@ export default function GardenScene({
   const [view, setView] = useState({ x: 120, y: 100, w: 900 })
   const [mode, setMode] = useState('view')          // 'view' | 'beds' | 'yard'
   const [yard, setYard] = useState(loadYard)
+  const [paths, setPaths] = useState(loadPaths)
+  const [decor, setDecor] = useState(loadDecor)
+  const [brush, setBrush] = useState('grass')       // 'grass' | 'path' (yard mode)
+  const [showDecor, setShowDecor] = useState(false)
   const [picker, setPicker] = useState(null)        // { bed, cell }
   const [sheet, setSheet] = useState(null)          // entry
   const [showBedForm, setShowBedForm] = useState(false)
@@ -100,6 +146,8 @@ export default function GardenScene({
   }, [])
 
   useEffect(() => { saveYard(yard) }, [yard])
+  useEffect(() => { savePaths(paths) }, [paths])
+  useEffect(() => { saveDecor(decor) }, [decor])
 
   // Non-passive wheel listener (React root wheel handlers are passive → preventDefault would fail)
   useEffect(() => {
@@ -174,11 +222,31 @@ export default function GardenScene({
     const tile = tileAt(clientX, clientY)
     if (!tile) return
     const add = gesture.current.paintValue
+
+    if (brush === 'path') {
+      // paths live only on grass
+      if (add && !yard.has(tile)) return
+      setPaths(prev => {
+        if (add === prev.has(tile)) return prev
+        const next = new Set(prev)
+        if (add) next.add(tile)
+        else next.delete(tile)
+        return next
+      })
+      return
+    }
+
     setYard(prev => {
       if (add === prev.has(tile)) return prev
       const next = new Set(prev)
       if (add) next.add(tile)
       else next.delete(tile)
+      return next
+    })
+    if (!add) setPaths(prev => {
+      if (!prev.has(tile)) return prev
+      const next = new Set(prev)
+      next.delete(tile)
       return next
     })
   }
@@ -194,7 +262,8 @@ export default function GardenScene({
 
     if (mode === 'yard') {
       const tile = tileAt(e.clientX, e.clientY)
-      gesture.current = { type: 'paint', moved: false, paintValue: tile ? !yard.has(tile) : true }
+      const target = brush === 'path' ? paths : yard
+      gesture.current = { type: 'paint', moved: false, paintValue: tile ? !target.has(tile) : true }
       paintTile(e.clientX, e.clientY)
       return
     }
@@ -207,6 +276,13 @@ export default function GardenScene({
     e.stopPropagation()
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
     gesture.current = { type: 'bed', moved: false, bed: { id: bed.id, x: bed.x, y: bed.y, origX: bed.x, origY: bed.y } }
+  }
+
+  function onDecorPointerDown(e, item) {
+    if (mode !== 'beds') return
+    e.stopPropagation()
+    pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
+    gesture.current = { type: 'decor', moved: false, decor: { id: item.id, x: item.x, y: item.y } }
   }
 
   function onPointerMove(e) {
@@ -243,6 +319,16 @@ export default function GardenScene({
         const { w, h } = bedSize(src)
         setInvalidBedId(isOnGrass(bx, by, w, h) ? null : g.bed.id)
       }
+      return
+    }
+
+    if (g.type === 'decor') {
+      if (!g.moved) { g.moved = true; try { svgRef.current.setPointerCapture(e.pointerId) } catch {} }
+      g.decor.x += dx
+      g.decor.y += dy
+      const gx = Math.round(g.decor.x / 5) * 5
+      const gy = Math.round(g.decor.y / 5) * 5
+      setDecor(prev => prev.map(d => d.id !== g.decor.id ? d : { ...d, x: gx, y: gy }))
       return
     }
 
@@ -354,7 +440,9 @@ export default function GardenScene({
   const yardTiles = [...yard]
 
   const hint = mode === 'yard'
-    ? 'Влачи по земята — добавяш трева; влачи по тревата — триеш'
+    ? (brush === 'path'
+        ? 'Влачи по тревата — рисуваш пътека; повторно — триеш'
+        : 'Влачи по земята — добавяш трева; влачи по тревата — триеш')
     : mode === 'beds'
       ? 'Влачи лехите, за да ги подредиш — после натисни ✓'
       : beds.length > 0 && planted.length === 0
@@ -406,21 +494,68 @@ export default function GardenScene({
           })}
         </g>
 
-        {/* yard edge: outline + soft southern lip for depth */}
+        {/* garden paths */}
+        <g>
+          {[...paths].filter(key => yard.has(key)).map(key => {
+            const [r, c] = key.split('-').map(Number)
+            const x = c * TILE, y = r * TILE
+            const h = (r * 41 + c * 89) % 4
+            return (
+              <g key={key} pointerEvents="none">
+                <rect x={x} y={y} width={TILE + 0.5} height={TILE + 0.5} fill="#DDD2B8" />
+                <circle cx={x + 14 + h * 3} cy={y + 16} r={2.2} fill="rgba(140,125,95,0.35)" />
+                <circle cx={x + 38} cy={y + 34 + h * 2} r={2.8} fill="rgba(140,125,95,0.28)" />
+                <circle cx={x + 22} cy={y + 44} r={1.8} fill="rgba(140,125,95,0.3)" />
+              </g>
+            )
+          })}
+        </g>
+
+        {/* lawn detail: tufts, wildflowers, pebbles */}
+        <g>
+          {yardTiles.filter(key => !paths.has(key)).map(key => {
+            const [r, c] = key.split('-').map(Number)
+            return <TileNoise key={key} r={r} c={c} />
+          })}
+        </g>
+
+        {/* yard edge: fence + soft southern lip for depth */}
         <g pointerEvents="none">
           {yardTiles.map(key => {
             const [r, c] = key.split('-').map(Number)
             const x = c * TILE, y = r * TILE
             const edges = []
-            if (!yard.has(`${r - 1}-${c}`)) edges.push(<line key="n" x1={x} y1={y} x2={x + TILE} y2={y} stroke="#9DB97C" strokeWidth={3} />)
+            const post = (px, py) => (
+              <g key={`p${px}-${py}`}>
+                <rect x={px - 2} y={py - 9} width={4} height={11} rx={1.5} fill="#8F6B3E" />
+                <rect x={px - 2} y={py - 9} width={4} height={2.5} rx={1} fill="#A8814F" />
+              </g>
+            )
+            if (!yard.has(`${r - 1}-${c}`)) edges.push(
+              <g key="n">
+                <rect x={x} y={y - 4} width={TILE} height={3} rx={1.5} fill="#B08A55" />
+                {post(x, y)}{post(x + TILE, y)}
+              </g>
+            )
             if (!yard.has(`${r + 1}-${c}`)) edges.push(
               <g key="s">
                 <rect x={x} y={y + TILE - 5} width={TILE} height={5} fill="rgba(90,115,60,0.30)" />
-                <line x1={x} y1={y + TILE} x2={x + TILE} y2={y + TILE} stroke="#8CA96C" strokeWidth={3} />
+                <rect x={x} y={y + TILE - 1} width={TILE} height={3} rx={1.5} fill="#B08A55" />
+                {post(x, y + TILE + 3)}{post(x + TILE, y + TILE + 3)}
               </g>
             )
-            if (!yard.has(`${r}-${c - 1}`)) edges.push(<line key="w" x1={x} y1={y} x2={x} y2={y + TILE} stroke="#9DB97C" strokeWidth={3} />)
-            if (!yard.has(`${r}-${c + 1}`)) edges.push(<line key="e" x1={x + TILE} y1={y} x2={x + TILE} y2={y + TILE} stroke="#9DB97C" strokeWidth={3} />)
+            if (!yard.has(`${r}-${c - 1}`)) edges.push(
+              <g key="w">
+                <rect x={x - 1.5} y={y} width={3} height={TILE} rx={1.5} fill="#B08A55" />
+                {post(x, y + 4)}{post(x, y + TILE)}
+              </g>
+            )
+            if (!yard.has(`${r}-${c + 1}`)) edges.push(
+              <g key="e">
+                <rect x={x + TILE - 1.5} y={y} width={3} height={TILE} rx={1.5} fill="#B08A55" />
+                {post(x + TILE, y + 4)}{post(x + TILE, y + TILE)}
+              </g>
+            )
             return edges.length ? <g key={key}>{edges}</g> : null
           })}
         </g>
@@ -463,6 +598,33 @@ export default function GardenScene({
             })} />
         ))}
 
+        {/* decor items */}
+        {mode !== 'yard' && decor.map(item => {
+          const def = decorByType[item.type]
+          if (!def) return null
+          return (
+            <g key={item.id}
+              onPointerDown={mode === 'beds' ? e => onDecorPointerDown(e, item) : undefined}
+              style={mode === 'beds' ? { cursor: 'grab' } : undefined}>
+              <ellipse cx={item.x} cy={item.y + def.size * 0.32} rx={def.size * 0.34} ry={def.size * 0.1}
+                fill="rgba(0,0,0,0.13)" />
+              <text x={item.x} y={item.y + def.size * 0.36} textAnchor="middle" fontSize={def.size}
+                className={def.sway ? 'plant-sway' : undefined}
+                style={def.sway ? { animationDuration: '5.5s', animationDelay: `${-(item.id % 40) / 10}s`, userSelect: 'none' } : { userSelect: 'none' }}>
+                {def.emoji}
+              </text>
+              {mode === 'beds' && (
+                <g onClick={e => { e.stopPropagation(); setDecor(prev => prev.filter(d => d.id !== item.id)) }}
+                  onPointerDown={e => e.stopPropagation()} style={{ cursor: 'pointer' }}>
+                  <circle cx={item.x + def.size * 0.45} cy={item.y - def.size * 0.5} r={8} fill="#E74C3C" />
+                  <text x={item.x + def.size * 0.45} y={item.y - def.size * 0.5 + 3.5} textAnchor="middle"
+                    fontSize="10" fill="#fff" fontWeight="700" pointerEvents="none">✕</text>
+                </g>
+              )}
+            </g>
+          )
+        })}
+
         {mode !== 'yard' && <Critters phase={activePhase} bloomSpots={bloomSpots} />}
 
         {/* day/night tint (multiply keeps colors rich) */}
@@ -502,12 +664,65 @@ export default function GardenScene({
           aria-label={mode === 'beds' ? 'Готово' : 'Подреди лехите'}>
           {mode === 'beds' ? <Check size={18} /> : <Pencil size={16} />}
         </button>
+        <button onClick={() => setShowDecor(s => !s)}
+          className="w-10 h-10 rounded-xl flex items-center justify-center"
+          style={{ background: showDecor ? '#4A7C59' : '#fff', color: showDecor ? '#fff' : '#4A7C59', border: '1px solid #D4EDE0' }}
+          aria-label="Декорации">
+          <TreePine size={16} />
+        </button>
         <button onClick={() => setShowBedForm(true)}
           className="h-10 px-3.5 rounded-xl flex items-center gap-1.5 text-sm font-semibold"
           style={{ background: '#4A7C59', color: '#fff' }}>
           <Plus size={15} strokeWidth={2.5} /> Леха
         </button>
       </div>
+
+      {showDecor && (
+        <div className="absolute top-14 right-3 z-30 rounded-2xl p-3 w-56"
+          style={{ background: '#fff', border: '1px solid #D4EDE0', boxShadow: '0 8px 24px rgba(30,58,47,0.15)' }}>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-semibold" style={{ color: '#1E3A2F' }}>Декорации</p>
+            <button onClick={() => setShowDecor(false)} aria-label="Затвори"
+              className="w-6 h-6 rounded-full flex items-center justify-center"
+              style={{ background: '#F5F2EC', color: '#6A9E78' }}>
+              <X size={12} />
+            </button>
+          </div>
+          <div className="grid grid-cols-4 gap-1.5">
+            {DECOR_TYPES.map(d => (
+              <button key={d.type} title={d.label}
+                onClick={() => {
+                  const v = viewRef.current
+                  const vh2 = v.w * aspectRef.current
+                  setDecor(prev => [...prev, {
+                    id: Date.now(), type: d.type,
+                    x: Math.round((v.x + v.w / 2) / 5) * 5,
+                    y: Math.round((v.y + vh2 / 2) / 5) * 5,
+                  }])
+                  setShowDecor(false)
+                  setMode('beds')
+                  flash(`${d.emoji} ${d.label} — влачи го на място, после ✓`)
+                }}
+                className="aspect-square rounded-xl text-xl flex items-center justify-center transition-colors hover:bg-[#F5F2EC]"
+                style={{ border: '1px solid #F0EBE3' }}>
+                {d.emoji}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {mode === 'yard' && (
+        <div className="absolute top-3 left-3 flex rounded-xl p-0.5" style={{ background: '#fff', border: '1px solid #D4EDE0' }}>
+          {[{ id: 'grass', label: '🌿 Трева' }, { id: 'path', label: '🚶 Пътека' }].map(b => (
+            <button key={b.id} onClick={() => setBrush(b.id)}
+              className="px-3 py-1.5 rounded-[10px] text-xs font-semibold"
+              style={brush === b.id ? { background: '#4A7C59', color: '#fff' } : { color: '#6A9E78' }}>
+              {b.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {(toast || hint) && (
         <p className={`absolute bottom-3 left-1/2 -translate-x-1/2 text-xs px-3.5 py-1.5 rounded-2xl text-center ${toast ? 'w-max max-w-[88%]' : 'whitespace-nowrap'}`}

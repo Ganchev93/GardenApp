@@ -32,3 +32,22 @@ export function loadYard() {
 export function saveYard(yard) {
   try { localStorage.setItem(YARD_KEY, JSON.stringify([...yard])) } catch {}
 }
+
+export const PATHS_KEY = 'my_garden_paths'
+export const DECOR_KEY = 'my_garden_decor'
+
+export function loadPaths() {
+  try { return new Set(JSON.parse(localStorage.getItem(PATHS_KEY)) || []) } catch { return new Set() }
+}
+
+export function savePaths(paths) {
+  try { localStorage.setItem(PATHS_KEY, JSON.stringify([...paths])) } catch {}
+}
+
+export function loadDecor() {
+  try { return JSON.parse(localStorage.getItem(DECOR_KEY)) || [] } catch { return [] }
+}
+
+export function saveDecor(decor) {
+  try { localStorage.setItem(DECOR_KEY, JSON.stringify(decor)) } catch {}
+}
