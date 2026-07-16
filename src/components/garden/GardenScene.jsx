@@ -13,11 +13,14 @@ const WORLD = { w: YARD_COLS * TILE, h: YARD_ROWS * TILE }
 const catalogById = Object.fromEntries(catalog.map(p => [p.id, p]))
 
 const PHASE_STYLE = {
-  dawn:  { grass: '#D9E4C0', overlay: 'rgba(255, 196, 120, 0.10)' },
-  day:   { grass: '#D8E6C6', overlay: null },
-  dusk:  { grass: '#D5DDB8', overlay: 'rgba(232, 132, 60, 0.13)' },
-  night: { grass: '#9FB294', overlay: 'rgba(16, 28, 66, 0.38)' },
+  dawn:  { overlay: 'rgba(255, 196, 120, 0.12)' },
+  day:   { overlay: null },
+  dusk:  { overlay: 'rgba(235, 130, 60, 0.15)' },
+  night: { overlay: 'rgba(18, 32, 74, 0.42)' },
 }
+
+const GRASS_TONES = ['#CBE0AE', '#C3D9A4', '#D2E5B8']
+const grassTone = (r, c) => GRASS_TONES[(r * 7 + c * 13) % 3]
 
 const STARS = [
   [120, 60], [340, 100], [560, 45], [760, 90], [980, 55], [1100, 120],
@@ -44,6 +47,13 @@ export default function GardenScene({
   const [justPlantedUid, setJustPlantedUid] = useState(null)
   const [wateringUid, setWateringUid] = useState(null)
   const [phase, setPhase] = useState(dayPhase)
+  const [invalidBedId, setInvalidBedId] = useState(null)
+  const [toast, setToast] = useState(null)
+
+  function flash(msg) {
+    setToast(msg)
+    setTimeout(() => setToast(null), 2600)
+  }
 
   const viewRef = useRef(view)
   viewRef.current = view
@@ -124,6 +134,17 @@ export default function GardenScene({
     return `${row}-${col}`
   }
 
+  function isOnGrass(x, y, w, h) {
+    const r0 = Math.floor(y / TILE), r1 = Math.floor((y + h - 1) / TILE)
+    const c0 = Math.floor(x / TILE), c1 = Math.floor((x + w - 1) / TILE)
+    for (let r = r0; r <= r1; r++) {
+      for (let c = c0; c <= c1; c++) {
+        if (!yard.has(`${r}-${c}`)) return false
+      }
+    }
+    return true
+  }
+
   // ── gestures ──────────────────────────────────────────
   function paintTile(clientX, clientY) {
     const tile = tileAt(clientX, clientY)
@@ -161,7 +182,7 @@ export default function GardenScene({
   function onBedPointerDown(e, bed) {
     e.stopPropagation()
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
-    gesture.current = { type: 'bed', moved: false, bed: { id: bed.id, x: bed.x, y: bed.y } }
+    gesture.current = { type: 'bed', moved: false, bed: { id: bed.id, x: bed.x, y: bed.y, origX: bed.x, origY: bed.y } }
   }
 
   function onPointerMove(e) {
@@ -190,7 +211,14 @@ export default function GardenScene({
       if (!g.moved) { g.moved = true; try { svgRef.current.setPointerCapture(e.pointerId) } catch {} }
       g.bed.x += dx
       g.bed.y += dy
-      onMoveBed(g.bed.id, Math.round(g.bed.x / 10) * 10, Math.round(g.bed.y / 10) * 10)
+      const bx = Math.round(g.bed.x / 10) * 10
+      const by = Math.round(g.bed.y / 10) * 10
+      onMoveBed(g.bed.id, bx, by)
+      const src = beds.find(b => b.id === g.bed.id)
+      if (src) {
+        const { w, h } = bedSize(src)
+        setInvalidBedId(isOnGrass(bx, by, w, h) ? null : g.bed.id)
+      }
       return
     }
 
@@ -210,6 +238,21 @@ export default function GardenScene({
   function onPointerUp(e) {
     pointers.current.delete(e.pointerId)
     try { svgRef.current.releasePointerCapture(e.pointerId) } catch {}
+    const g = gesture.current
+
+    // dropping a bed on dirt → snap back to where the drag started
+    if (g.type === 'bed' && g.moved && g.bed) {
+      const src = beds.find(b => b.id === g.bed.id)
+      if (src) {
+        const { w, h } = bedSize(src)
+        if (!isOnGrass(src.x, src.y, w, h)) {
+          onMoveBed(g.bed.id, g.bed.origX, g.bed.origY)
+          flash('Лехите се поставят само върху трева')
+        }
+      }
+      setInvalidBedId(null)
+    }
+
     if (pointers.current.size === 0) {
       // keep `moved` until the click event (fires right after pointerup) checks it
       setTimeout(() => { gesture.current = { type: null, moved: false } }, 0)
@@ -231,13 +274,31 @@ export default function GardenScene({
     const { w, h } = bedSize({ rows, cols })
     const v = viewRef.current
     const vh = v.w * aspectRef.current
-    const bed = {
-      id: Date.now(),
-      name, rows, cols,
-      x: Math.round((v.x + v.w / 2 - w / 2) / 10) * 10,
-      y: Math.round((v.y + vh / 2 - h / 2) / 10) * 10,
+    const cx = v.x + v.w / 2 - w / 2
+    const cy = v.y + vh / 2 - h / 2
+
+    // prefer view center; otherwise nearest grass spot that fits
+    let x = Math.round(cx / 10) * 10
+    let y = Math.round(cy / 10) * 10
+    if (!isOnGrass(x, y, w, h)) {
+      let best = null
+      yard.forEach(key => {
+        const [r, c] = key.split('-').map(Number)
+        const tx = c * TILE + 4
+        const ty = r * TILE + 4
+        if (!isOnGrass(tx, ty, w, h)) return
+        const d = (tx - cx) ** 2 + (ty - cy) ** 2
+        if (!best || d < best.d) best = { x: tx, y: ty, d }
+      })
+      if (!best) {
+        flash('Няма достатъчно трева за тази леха — разшири двора или намали размера')
+        return
+      }
+      x = best.x
+      y = best.y
     }
-    onAddBed(bed)
+
+    onAddBed({ id: Date.now(), name, rows, cols, x, y })
     setShowBedForm(false)
     setBedName('')
     setMode('beds')
@@ -289,30 +350,53 @@ export default function GardenScene({
             <stop offset="100%" stopColor="#FFD54F" stopOpacity="0" />
           </radialGradient>
           <pattern id="grassDots" width="46" height="46" patternUnits="userSpaceOnUse">
-            <path d="M8 12 q2 -6 4 0" stroke="rgba(74,124,89,0.25)" strokeWidth="1.2" fill="none" />
-            <path d="M30 34 q2 -6 4 0" stroke="rgba(74,124,89,0.2)" strokeWidth="1.2" fill="none" />
-            <circle cx="22" cy="24" r="0.8" fill="rgba(74,124,89,0.12)" />
+            <path d="M8 12 q2 -6 4 0" stroke="rgba(74,124,89,0.3)" strokeWidth="1.2" fill="none" />
+            <path d="M30 34 q2 -6 4 0" stroke="rgba(74,124,89,0.24)" strokeWidth="1.2" fill="none" />
+            <path d="M20 25 q2 -5 3.5 0" stroke="rgba(74,124,89,0.18)" strokeWidth="1" fill="none" />
           </pattern>
           <pattern id="dirtDots" width="38" height="38" patternUnits="userSpaceOnUse">
-            <circle cx="9" cy="12" r="1" fill="rgba(120,100,70,0.18)" />
-            <circle cx="27" cy="29" r="1.3" fill="rgba(120,100,70,0.13)" />
+            <circle cx="9" cy="12" r="1.2" fill="rgba(150,125,90,0.28)" />
+            <circle cx="27" cy="29" r="1.5" fill="rgba(150,125,90,0.2)" />
+            <circle cx="19" cy="22" r="0.9" fill="rgba(150,125,90,0.16)" />
           </pattern>
+          <filter id="bedShadow" x="-20%" y="-20%" width="140%" height="150%">
+            <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#3A3020" floodOpacity="0.28" />
+          </filter>
         </defs>
 
         {/* outside the yard: bare ground */}
-        <rect x={-400} y={-400} width={WORLD.w + 800} height={WORLD.h + 800} fill="#E0D9C8" />
+        <rect x={-400} y={-400} width={WORLD.w + 800} height={WORLD.h + 800} fill="#E7DFCB" />
         <rect x={-400} y={-400} width={WORLD.w + 800} height={WORLD.h + 800} fill="url(#dirtDots)" />
 
-        {/* yard grass tiles */}
+        {/* yard grass tiles (tone variation like patches of lawn) */}
         <g>
           {yardTiles.map(key => {
             const [r, c] = key.split('-').map(Number)
             return (
               <g key={key}>
-                <rect x={c * TILE} y={r * TILE} width={TILE} height={TILE} fill={style.grass} />
+                <rect x={c * TILE} y={r * TILE} width={TILE + 0.5} height={TILE + 0.5} fill={grassTone(r, c)} />
                 <rect x={c * TILE} y={r * TILE} width={TILE} height={TILE} fill="url(#grassDots)" />
               </g>
             )
+          })}
+        </g>
+
+        {/* yard edge: outline + soft southern lip for depth */}
+        <g pointerEvents="none">
+          {yardTiles.map(key => {
+            const [r, c] = key.split('-').map(Number)
+            const x = c * TILE, y = r * TILE
+            const edges = []
+            if (!yard.has(`${r - 1}-${c}`)) edges.push(<line key="n" x1={x} y1={y} x2={x + TILE} y2={y} stroke="#9DB97C" strokeWidth={3} />)
+            if (!yard.has(`${r + 1}-${c}`)) edges.push(
+              <g key="s">
+                <rect x={x} y={y + TILE - 5} width={TILE} height={5} fill="rgba(90,115,60,0.30)" />
+                <line x1={x} y1={y + TILE} x2={x + TILE} y2={y + TILE} stroke="#8CA96C" strokeWidth={3} />
+              </g>
+            )
+            if (!yard.has(`${r}-${c - 1}`)) edges.push(<line key="w" x1={x} y1={y} x2={x} y2={y + TILE} stroke="#9DB97C" strokeWidth={3} />)
+            if (!yard.has(`${r}-${c + 1}`)) edges.push(<line key="e" x1={x + TILE} y1={y} x2={x + TILE} y2={y + TILE} stroke="#9DB97C" strokeWidth={3} />)
+            return edges.length ? <g key={key}>{edges}</g> : null
           })}
         </g>
 
@@ -338,6 +422,7 @@ export default function GardenScene({
             catalogById={catalogById}
             badPairs={badPairs.filter(p => Number(p.bedId) === bed.id)}
             editMode={mode === 'beds'}
+            invalid={invalidBedId === bed.id}
             justPlantedUid={justPlantedUid} wateringUid={wateringUid}
             onCellTap={tapGuard((b, cell) => setPicker({ bed: b, cell }))}
             onPlantTap={tapGuard(entry => setSheet(entry))}
@@ -352,10 +437,18 @@ export default function GardenScene({
           <rect x={-400} y={-400} width={WORLD.w + 800} height={WORLD.h + 800}
             fill={style.overlay} pointerEvents="none" />
         )}
-        {phase === 'night' && STARS.map(([sx, sy], i) => (
-          <circle key={i} className="firefly" cx={sx} cy={sy} r={1.1} fill="#fff"
-            style={{ animationDelay: `${i * 0.9}s`, animationDuration: '9s' }} pointerEvents="none" />
-        ))}
+        {phase === 'night' && (
+          <g pointerEvents="none">
+            {STARS.map(([sx, sy], i) => (
+              <circle key={i} className="firefly" cx={sx} cy={sy} r={1.1} fill="#fff"
+                style={{ animationDelay: `${i * 0.9}s`, animationDuration: '9s' }} />
+            ))}
+            <circle cx={WORLD.w - 130} cy={70} r={34} fill="#F6F1DC" opacity="0.12" />
+            <circle cx={WORLD.w - 130} cy={70} r={21} fill="#F6F1DC" opacity="0.85" />
+            <circle cx={WORLD.w - 138} cy={64} r={5} fill="rgba(200,195,170,0.5)" />
+            <circle cx={WORLD.w - 124} cy={76} r={3.5} fill="rgba(200,195,170,0.4)" />
+          </g>
+        )}
       </svg>
 
       {/* controls */}
@@ -379,10 +472,12 @@ export default function GardenScene({
         </button>
       </div>
 
-      {hint && (
+      {(toast || hint) && (
         <p className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs px-3 py-1.5 rounded-full whitespace-nowrap"
-          style={{ background: 'rgba(255,255,255,0.9)', color: '#4A7C59' }}>
-          {hint}
+          style={toast
+            ? { background: '#FDF3DC', color: '#7A4A00', border: '1px solid #EAD9B0' }
+            : { background: 'rgba(255,255,255,0.9)', color: '#4A7C59' }}>
+          {toast || hint}
         </p>
       )}
 

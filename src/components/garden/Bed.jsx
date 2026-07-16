@@ -17,7 +17,7 @@ export function cellCenter(bed, cell) {
 
 export default function Bed({
   bed, entries, catalogById, badPairs, today,
-  editMode, justPlantedUid, wateringUid,
+  editMode, invalid, justPlantedUid, wateringUid,
   onCellTap, onPlantTap, onBedPointerDown, onRemoveBed,
 }) {
   const { w, h } = bedSize(bed)
@@ -29,6 +29,8 @@ export default function Bed({
     for (let c = 0; c < bed.cols; c++) cells.push({ row: r, col: c })
   }
 
+  const labelW = bed.name.length * 7.2 + 18
+
   return (
     <g
       onPointerDown={editMode ? e => onBedPointerDown(e, bed) : undefined}
@@ -36,9 +38,12 @@ export default function Bed({
     >
       {/* soil */}
       <rect x={bed.x} y={bed.y} width={w} height={h} rx={12}
-        fill="#8A6644" stroke="#6E4F33" strokeWidth={3} />
+        fill="#8A6644" stroke="#6E4F33" strokeWidth={3} filter="url(#bedShadow)" />
       <rect x={bed.x + 4} y={bed.y + 4} width={w - 8} height={h - 8} rx={9}
         fill="#7A5A3C" />
+      {/* top-light edge for depth */}
+      <rect x={bed.x + 4} y={bed.y + 4} width={w - 8} height={5} rx={2.5}
+        fill="rgba(255,255,255,0.08)" />
 
       {/* cell grid */}
       {cells.map(cell => {
@@ -49,16 +54,17 @@ export default function Bed({
             <rect
               x={x - CELL / 2 + 3} y={y - CELL / 2 + 3}
               width={CELL - 6} height={CELL - 6} rx={7}
-              fill={occupied ? 'transparent' : 'rgba(0,0,0,0.12)'}
-              stroke="rgba(255,255,255,0.07)" strokeWidth={1}
+              fill={occupied ? 'transparent' : 'rgba(0,0,0,0.13)'}
+              stroke="rgba(0,0,0,0.10)" strokeWidth={1}
               style={!editMode && !occupied ? { cursor: 'pointer' } : undefined}
               onClick={!editMode && !occupied ? e => { e.stopPropagation(); onCellTap(bed, cell) } : undefined}
             />
             {!occupied && !editMode && (
               <g pointerEvents="none">
-                <circle cx={x} cy={y} r={9} fill="rgba(255,255,255,0.14)" />
-                <text x={x} y={y + 4.5} textAnchor="middle" fontSize="14" fontWeight="600"
-                  fill="rgba(255,255,255,0.55)" style={{ userSelect: 'none' }}>+</text>
+                <circle cx={x} cy={y} r={8} fill="none"
+                  stroke="rgba(255,255,255,0.28)" strokeWidth={1.3} strokeDasharray="3 3" />
+                <text x={x} y={y + 3.8} textAnchor="middle" fontSize="11"
+                  fill="rgba(255,255,255,0.4)" style={{ userSelect: 'none' }}>+</text>
               </g>
             )}
           </g>
@@ -94,11 +100,15 @@ export default function Bed({
         )
       })}
 
-      {/* name label */}
-      <text x={bed.x + 2} y={bed.y - 8} fontSize="13" fontWeight="600" pointerEvents="none"
-        fill="#4A3A28" style={{ fontFamily: 'Fraunces, Georgia, serif', userSelect: 'none' }}>
-        {bed.name}
-      </text>
+      {/* name chip */}
+      <g pointerEvents="none">
+        <rect x={bed.x} y={bed.y - 22} width={labelW} height={17} rx={8.5}
+          fill="rgba(255,255,255,0.88)" />
+        <text x={bed.x + 9} y={bed.y - 10} fontSize="10.5" fontWeight="600"
+          fill="#4A3A28" style={{ fontFamily: 'Plus Jakarta Sans, sans-serif', userSelect: 'none' }}>
+          {bed.name}
+        </text>
+      </g>
 
       {editMode && (
         <g onClick={e => { e.stopPropagation(); onRemoveBed(bed.id) }} style={{ cursor: 'pointer' }}
@@ -109,7 +119,8 @@ export default function Bed({
       )}
       {editMode && (
         <rect x={bed.x - 4} y={bed.y - 4} width={w + 8} height={h + 8} rx={14}
-          fill="none" stroke="#4A7C59" strokeWidth={2} strokeDasharray="6 5" pointerEvents="none" />
+          fill="none" stroke={invalid ? '#E74C3C' : '#4A7C59'} strokeWidth={2}
+          strokeDasharray="6 5" pointerEvents="none" />
       )}
     </g>
   )
