@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { Plus, Pencil, Check, Fence } from 'lucide-react'
+import { Plus, Pencil, Check, Fence, Clock, Sunrise, Sun, Sunset, Moon } from 'lucide-react'
 import { plants as catalog } from '../../data/plants'
 import { badPairsInBeds } from '../../lib/companions'
 import { dayPhase } from '../../lib/growth'
@@ -12,11 +12,12 @@ import PlantSheet from './PlantSheet'
 const WORLD = { w: YARD_COLS * TILE, h: YARD_ROWS * TILE }
 const catalogById = Object.fromEntries(catalog.map(p => [p.id, p]))
 
+// Tint via multiply blend — keeps colors rich instead of washing them gray
 const PHASE_STYLE = {
-  dawn:  { overlay: 'rgba(255, 196, 120, 0.12)' },
-  day:   { overlay: null },
-  dusk:  { overlay: 'rgba(235, 130, 60, 0.15)' },
-  night: { overlay: 'rgba(18, 32, 74, 0.42)' },
+  dawn:  { tint: '#FFDCA8', opacity: 0.4 },
+  day:   { tint: null },
+  dusk:  { tint: '#FFB37A', opacity: 0.42 },
+  night: { tint: '#7D90CE', opacity: 0.78 },
 }
 
 const GRASS_TONES = ['#CBE0AE', '#C3D9A4', '#D2E5B8']
@@ -26,6 +27,28 @@ const STARS = [
   [120, 60], [340, 100], [560, 45], [760, 90], [980, 55], [1100, 120],
   [230, 140], [660, 150], [880, 40], [440, 70],
 ]
+
+const PHASE_CYCLE = [
+  { value: null, label: 'Сега', Icon: Clock },
+  { value: 'dawn', label: 'Утро', Icon: Sunrise },
+  { value: 'day', label: 'Ден', Icon: Sun },
+  { value: 'dusk', label: 'Залез', Icon: Sunset },
+  { value: 'night', label: 'Нощ', Icon: Moon },
+]
+
+function PhaseButton({ value, onChange }) {
+  const idx = PHASE_CYCLE.findIndex(p => p.value === value)
+  const current = PHASE_CYCLE[idx]
+  const next = PHASE_CYCLE[(idx + 1) % PHASE_CYCLE.length]
+  return (
+    <button onClick={() => onChange(next.value)}
+      className="absolute bottom-3 right-3 h-9 px-3 rounded-xl flex items-center gap-1.5 text-xs font-semibold"
+      style={{ background: 'rgba(255,255,255,0.92)', color: '#4A7C59', border: '1px solid #D4EDE0' }}
+      aria-label="Смени фазата на деня">
+      <current.Icon size={14} /> {current.label}
+    </button>
+  )
+}
 
 export default function GardenScene({
   plants, beds,
@@ -47,6 +70,7 @@ export default function GardenScene({
   const [justPlantedUid, setJustPlantedUid] = useState(null)
   const [wateringUid, setWateringUid] = useState(null)
   const [phase, setPhase] = useState(dayPhase)
+  const [phaseOverride, setPhaseOverride] = useState(null)
   const [invalidBedId, setInvalidBedId] = useState(null)
   const [toast, setToast] = useState(null)
 
@@ -324,7 +348,8 @@ export default function GardenScene({
     setTimeout(() => setWateringUid(null), 1100)
   }
 
-  const style = PHASE_STYLE[phase]
+  const activePhase = phaseOverride || phase
+  const style = PHASE_STYLE[activePhase]
   const vh = view.w * aspect
   const yardTiles = [...yard]
 
@@ -430,14 +455,15 @@ export default function GardenScene({
             onRemoveBed={onRemoveBed} />
         ))}
 
-        {mode !== 'yard' && <Critters phase={phase} bloomSpots={bloomSpots} />}
+        {mode !== 'yard' && <Critters phase={activePhase} bloomSpots={bloomSpots} />}
 
-        {/* day/night tint */}
-        {style.overlay && (
+        {/* day/night tint (multiply keeps colors rich) */}
+        {style.tint && (
           <rect x={-400} y={-400} width={WORLD.w + 800} height={WORLD.h + 800}
-            fill={style.overlay} pointerEvents="none" />
+            fill={style.tint} opacity={style.opacity} pointerEvents="none"
+            style={{ mixBlendMode: 'multiply' }} />
         )}
-        {phase === 'night' && (
+        {activePhase === 'night' && (
           <g pointerEvents="none">
             {STARS.map(([sx, sy], i) => (
               <circle key={i} className="firefly" cx={sx} cy={sy} r={1.1} fill="#fff"
@@ -450,6 +476,9 @@ export default function GardenScene({
           </g>
         )}
       </svg>
+
+      {/* phase preview (bottom-right) */}
+      <PhaseButton value={phaseOverride} onChange={setPhaseOverride} autoPhase={phase} />
 
       {/* controls */}
       <div className="absolute top-3 right-3 flex gap-2">
