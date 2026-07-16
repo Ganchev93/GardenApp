@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Droplets, Sprout, Bug, X, NotebookPen, Plus, CalendarDays, Search } from 'lucide-react'
+import { Droplets, Sprout, Bug, X, NotebookPen, Plus, CalendarDays, Search, Map, List } from 'lucide-react'
 import { plants as catalog } from '../data/plants'
 import { ACTIVITIES } from '../components/PlantTimeline'
 import { loadGarden, saveGarden, addDays } from '../lib/garden'
+import { loadBeds, saveBeds } from '../lib/beds'
+import GardenScene from '../components/garden/GardenScene'
 import emptyBedImg from '../assets/empty-bed.png'
 
 function dayLabel(days, due) {
@@ -21,8 +23,30 @@ const catStyle = {
   'цвете':    { bg: '#FDE8F0', color: '#7A1D45' },
 }
 
+function ViewToggle({ mode, setMode }) {
+  const opts = [
+    { id: 'map', label: 'Схема', Icon: Map },
+    { id: 'list', label: 'Списък', Icon: List },
+  ]
+  return (
+    <div className="flex rounded-xl p-0.5" style={{ background: '#F0EBE3' }}>
+      {opts.map(o => (
+        <button key={o.id} onClick={() => setMode(o.id)}
+          className="px-3 py-1.5 rounded-[10px] text-xs font-semibold flex items-center gap-1.5 transition-colors"
+          style={mode === o.id
+            ? { background: '#fff', color: '#1E3A2F', boxShadow: '0 1px 2px rgba(0,0,0,0.06)' }
+            : { color: '#9CA3AF' }}>
+          <o.Icon size={13} /> {o.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export default function MyGarden() {
   const [myPlants, setMyPlants] = useState(loadGarden)
+  const [viewMode, setViewMode] = useState('map')
+  const [beds, setBeds] = useState(loadBeds)
   const [showAdd, setShowAdd] = useState(false)
   const [selectedId, setSelectedId] = useState('')
   const [query, setQuery] = useState('')
@@ -73,6 +97,45 @@ export default function MyGarden() {
   function removePlant(uid) { setMyPlants(prev => prev.filter(p => p.uid !== uid)) }
   function updateNote(uid, note) { setMyPlants(prev => prev.map(p => p.uid !== uid ? p : { ...p, note })) }
 
+  // ── виртуална градина ──────────────────────────────
+  useEffect(() => { saveBeds(beds) }, [beds])
+
+  function plantNew(bedId, cell, plant) {
+    const uid = Date.now()
+    setMyPlants(prev => [...prev, {
+      uid,
+      plantId: plant.id,
+      name: plant.name,
+      emoji: plant.emoji,
+      category: plant.category,
+      bedId, cell,
+      plantedAt: today,
+      lastWatered: today,
+      nextWatering: addDays(today, plant.watering.frequency_days),
+      watering_frequency_days: plant.watering.frequency_days,
+      watering_amount: plant.watering.amount,
+      lastFertilized: today,
+      nextFertilizing: plant.fertilizing.frequency_days === 0 ? null : addDays(today, plant.fertilizing.frequency_days),
+      frequency_days: plant.fertilizing.frequency_days,
+      fertilizer_type: plant.fertilizing.fertilizer_type,
+      dose: plant.fertilizing.dose,
+    }])
+    return uid
+  }
+
+  function assignToBed(uid, bedId, cell) {
+    setMyPlants(prev => prev.map(p => p.uid !== uid ? p : { ...p, bedId, cell }))
+  }
+  function unassignFromBed(uid) {
+    setMyPlants(prev => prev.map(p => p.uid !== uid ? p : { ...p, bedId: null, cell: null }))
+  }
+  function addBed(bed) { setBeds(prev => [...prev, bed]) }
+  function moveBed(id, x, y) { setBeds(prev => prev.map(b => b.id !== id ? b : { ...b, x, y })) }
+  function removeBed(id) {
+    setBeds(prev => prev.filter(b => b.id !== id))
+    setMyPlants(prev => prev.map(p => p.bedId !== id ? p : { ...p, bedId: null, cell: null }))
+  }
+
   const urgentCount = myPlants.filter(p => p.nextWatering <= today || (p.nextFertilizing && p.nextFertilizing <= today)).length
 
   const sorted = [...myPlants].sort((a, b) => {
@@ -100,13 +163,27 @@ export default function MyGarden() {
             {urgentCount > 0 && <span style={{ color: '#C97D0E' }}> · {urgentCount} чакат грижа</span>}
           </p>
         </div>
-        <button onClick={() => setShowAdd(!showAdd)}
-          className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 flex items-center gap-1"
-          style={{ background: '#4A7C59', color: '#fff' }}>
-          <Plus size={15} strokeWidth={2.5} /> Добави
-        </button>
+        <div className="flex items-center gap-2">
+          <ViewToggle mode={viewMode} setMode={setViewMode} />
+          {viewMode === 'list' && (
+            <button onClick={() => setShowAdd(!showAdd)}
+              className="px-4 py-2 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90 flex items-center gap-1"
+              style={{ background: '#4A7C59', color: '#fff' }}>
+              <Plus size={15} strokeWidth={2.5} /> Добави
+            </button>
+          )}
+        </div>
       </div>
 
+      {viewMode === 'map' && (
+        <GardenScene
+          plants={myPlants} beds={beds}
+          onAddBed={addBed} onMoveBed={moveBed} onRemoveBed={removeBed}
+          onPlantNew={plantNew} onAssign={assignToBed} onUnassign={unassignFromBed}
+          onWater={markWatered} />
+      )}
+
+      {viewMode === 'list' && (<>
       {showAdd && (
         <div className="rounded-2xl p-4 mb-4" style={{ background: '#fff', border: '1px solid #D4EDE0' }}>
           <h3 className="font-semibold mb-3" style={{ color: '#1C2B23' }}>Добави растение</h3>
@@ -186,6 +263,7 @@ export default function MyGarden() {
             onNote={updateNote} />
         ))}
       </div>
+      </>)}
     </div>
   )
 }
