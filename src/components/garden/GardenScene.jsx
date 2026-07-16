@@ -120,6 +120,7 @@ export default function GardenScene({
   const [invalidBedId, setInvalidBedId] = useState(null)
   const [toast, setToast] = useState(null)
   const [warnPopup, setWarnPopup] = useState(null)   // { text, wx, wy }
+  const [hover, setHover] = useState(null)           // { entry, stage, wx, wy }
 
   useEffect(() => {
     if (!warnPopup) return
@@ -596,6 +597,8 @@ export default function GardenScene({
             onPlantTap={tapGuard(entry => setSheet(entry))}
             onBedPointerDown={onBedPointerDown}
             onRemoveBed={onRemoveBed}
+            onPlantHover={(entry, stage, wx, wy) => setHover({ entry, stage, wx, wy })}
+            onPlantHoverEnd={() => setHover(null)}
             onWarningTap={tapGuard((p, mx, my) => {
               const cat = catalogById[p.a.plantId]
               const catB = catalogById[p.b.plantId]
@@ -658,6 +661,29 @@ export default function GardenScene({
           </g>
         )}
       </svg>
+
+      {/* hover tooltip (mouse only) */}
+      {hover && !warnPopup && (
+        <div className="absolute z-30 -translate-x-1/2 -translate-y-full pointer-events-none"
+          style={{
+            left: `${((hover.wx - view.x) / view.w) * 100}%`,
+            top: `calc(${((hover.wy - view.y) / vh) * 100}% - 20px)`,
+          }}>
+          <div className="rounded-xl px-3 py-1.5 whitespace-nowrap"
+            style={{ background: 'rgba(30,43,35,0.92)', color: '#fff', boxShadow: '0 4px 14px rgba(0,0,0,0.2)' }}>
+            <p className="text-xs font-semibold">{hover.entry.emoji} {hover.entry.name}</p>
+            <p className="text-[10px]" style={{ color: '#B3D9C4' }}>
+              {{ seed: 'семе', sprout: 'кълн', young: 'младо растение', mature: 'зряло' }[hover.stage]}
+              {' · '}
+              {hover.entry.nextWatering <= today
+                ? 'чака поливане'
+                : `поливане след ${Math.max(1, Math.round((new Date(hover.entry.nextWatering) - new Date(today)) / 86400000))} дни`}
+            </p>
+          </div>
+          <div className="mx-auto w-0 h-0"
+            style={{ borderLeft: '6px solid transparent', borderRight: '6px solid transparent', borderTop: '7px solid rgba(30,43,35,0.92)' }} />
+        </div>
+      )}
 
       {/* companion warning bubble — stays until next click anywhere */}
       {warnPopup && (

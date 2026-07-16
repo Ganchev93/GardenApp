@@ -1,7 +1,7 @@
 import { growthStage, isHarvestMonth } from '../../lib/growth'
 
 // One plant inside a bed cell. Pure SVG, animations via CSS classes.
-export default function PlantSprite({ entry, cat, cx, cy, thirsty, justPlanted, watering, onTap }) {
+export default function PlantSprite({ entry, cat, cx, cy, thirsty, justPlanted, watering, onTap, onHover, onHoverEnd }) {
   const stage = growthStage(entry.plantedAt, entry.category)
   const harvest = stage === 'mature' && isHarvestMonth(cat?.calendar)
   // Randomized but stable per-plant sway rhythm
@@ -9,7 +9,9 @@ export default function PlantSprite({ entry, cat, cx, cy, thirsty, justPlanted, 
   const swayDelay = -((entry.uid % 31) / 10)
 
   return (
-    <g onClick={e => { e.stopPropagation(); onTap(entry) }} style={{ cursor: 'pointer' }}>
+    <g onClick={e => { e.stopPropagation(); onTap(entry) }} style={{ cursor: 'pointer' }}
+      onPointerEnter={e => { if (e.pointerType === 'mouse') onHover(entry, stage, cx, cy) }}
+      onPointerLeave={e => { if (e.pointerType === 'mouse') onHoverEnd() }}>
       <ellipse cx={cx} cy={cy + 14} rx={12} ry={3.5} fill="rgba(0,0,0,0.10)" />
 
       {harvest && (

@@ -19,6 +19,7 @@ export default function Bed({
   bed, entries, catalogById, badPairs, today,
   editMode, invalid, justPlantedUid, wateringUid,
   onCellTap, onPlantTap, onBedPointerDown, onRemoveBed, onWarningTap,
+  onPlantHover, onPlantHoverEnd,
 }) {
   const { w, h } = bedSize(bed)
   const byCell = {}
@@ -80,7 +81,7 @@ export default function Bed({
             cx={x} cy={y} thirsty={thirsty}
             justPlanted={e.uid === justPlantedUid}
             watering={e.uid === wateringUid}
-            onTap={onPlantTap} />
+            onTap={onPlantTap} onHover={onPlantHover} onHoverEnd={onPlantHoverEnd} />
         )
       })}
 
