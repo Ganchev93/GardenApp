@@ -452,7 +452,15 @@ export default function GardenScene({
             onCellTap={tapGuard((b, cell) => setPicker({ bed: b, cell }))}
             onPlantTap={tapGuard(entry => setSheet(entry))}
             onBedPointerDown={onBedPointerDown}
-            onRemoveBed={onRemoveBed} />
+            onRemoveBed={onRemoveBed}
+            onWarningTap={tapGuard(p => {
+              const cat = catalogById[p.a.plantId]
+              const catB = catalogById[p.b.plantId]
+              const note = cat?.companions?.bad?.includes(catB?.name)
+                ? cat?.companions?.note
+                : catB?.companions?.note
+              flash(`⚠ ${p.a.name} и ${p.b.name} са лоши съседи${note ? ` — ${note}` : ' — раздалечи ги'}`)
+            })} />
         ))}
 
         {mode !== 'yard' && <Critters phase={activePhase} bloomSpots={bloomSpots} />}
@@ -502,7 +510,7 @@ export default function GardenScene({
       </div>
 
       {(toast || hint) && (
-        <p className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs px-3 py-1.5 rounded-full whitespace-nowrap"
+        <p className={`absolute bottom-3 left-1/2 -translate-x-1/2 text-xs px-3.5 py-1.5 rounded-2xl text-center ${toast ? 'w-max max-w-[88%]' : 'whitespace-nowrap'}`}
           style={toast
             ? { background: '#FDF3DC', color: '#7A4A00', border: '1px solid #EAD9B0' }
             : { background: 'rgba(255,255,255,0.9)', color: '#4A7C59' }}>

@@ -18,7 +18,7 @@ export function cellCenter(bed, cell) {
 export default function Bed({
   bed, entries, catalogById, badPairs, today,
   editMode, invalid, justPlantedUid, wateringUid,
-  onCellTap, onPlantTap, onBedPointerDown, onRemoveBed,
+  onCellTap, onPlantTap, onBedPointerDown, onRemoveBed, onWarningTap,
 }) {
   const { w, h } = bedSize(bed)
   const byCell = {}
@@ -91,11 +91,13 @@ export default function Bed({
         const mx = (a.x + b.x) / 2
         const my = (a.y + b.y) / 2
         return (
-          <g key={i} pointerEvents="none">
+          <g key={i}>
             <line className="bad-link" x1={a.x} y1={a.y} x2={b.x} y2={b.y}
-              stroke="#E74C3C" strokeWidth={2} strokeDasharray="7 7" opacity={0.8} />
-            <circle cx={mx} cy={my} r={8} fill="#fff" stroke="#E74C3C" strokeWidth={1.5} />
-            <text x={mx} y={my + 3.5} textAnchor="middle" fontSize="10">⚠</text>
+              stroke="#E74C3C" strokeWidth={2} strokeDasharray="7 7" opacity={0.8} pointerEvents="none" />
+            <g onClick={e => { e.stopPropagation(); onWarningTap(p) }} style={{ cursor: 'pointer' }}>
+              <circle cx={mx} cy={my} r={10} fill="#fff" stroke="#E74C3C" strokeWidth={1.5} />
+              <text x={mx} y={my + 3.5} textAnchor="middle" fontSize="10" pointerEvents="none">⚠</text>
+            </g>
           </g>
         )
       })}
