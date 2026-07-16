@@ -196,8 +196,9 @@ export default function GardenScene({
   const vh = view.w * aspect
 
   return (
-    <div ref={wrapRef} className="relative rounded-3xl overflow-hidden anim-fade"
-      style={{ border: '1px solid #D4EDE0', height: 'min(68vh, 640px)', minHeight: 380, touchAction: 'none' }}>
+    <div ref={wrapRef} className="relative rounded-3xl overflow-hidden anim-fade select-none"
+      onContextMenu={e => e.preventDefault()}
+      style={{ border: '1px solid #D4EDE0', height: 'min(68vh, 640px)', minHeight: 380, touchAction: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none' }}>
       <svg ref={svgRef} width="100%" height="100%"
         viewBox={`${view.x} ${view.y} ${view.w} ${vh}`}
         onWheel={onWheel}
@@ -261,9 +262,15 @@ export default function GardenScene({
       </div>
 
       {editMode && (
-        <p className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs px-3 py-1.5 rounded-full"
+        <p className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs px-3 py-1.5 rounded-full whitespace-nowrap"
           style={{ background: 'rgba(255,255,255,0.9)', color: '#4A7C59' }}>
-          Влачи лехите, за да ги подредиш
+          Влачи лехите, за да ги подредиш — после натисни ✓
+        </p>
+      )}
+      {!editMode && beds.length > 0 && planted.length === 0 && (
+        <p className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs px-3 py-1.5 rounded-full whitespace-nowrap"
+          style={{ background: 'rgba(255,255,255,0.9)', color: '#4A7C59' }}>
+          Тапни ➕ клетка в лехата, за да засадиш
         </p>
       )}
 

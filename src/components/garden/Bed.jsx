@@ -55,8 +55,11 @@ export default function Bed({
               onClick={!editMode && !occupied ? e => { e.stopPropagation(); onCellTap(bed, cell) } : undefined}
             />
             {!occupied && !editMode && (
-              <text x={x} y={y + 4} textAnchor="middle" fontSize="13"
-                fill="rgba(255,255,255,0.25)" pointerEvents="none">+</text>
+              <g pointerEvents="none">
+                <circle cx={x} cy={y} r={9} fill="rgba(255,255,255,0.14)" />
+                <text x={x} y={y + 4.5} textAnchor="middle" fontSize="14" fontWeight="600"
+                  fill="rgba(255,255,255,0.55)" style={{ userSelect: 'none' }}>+</text>
+              </g>
             )}
           </g>
         )
@@ -92,8 +95,8 @@ export default function Bed({
       })}
 
       {/* name label */}
-      <text x={bed.x + 2} y={bed.y - 8} fontSize="13" fontWeight="600"
-        fill="#4A3A28" style={{ fontFamily: 'Fraunces, Georgia, serif' }}>
+      <text x={bed.x + 2} y={bed.y - 8} fontSize="13" fontWeight="600" pointerEvents="none"
+        fill="#4A3A28" style={{ fontFamily: 'Fraunces, Georgia, serif', userSelect: 'none' }}>
         {bed.name}
       </text>
 
