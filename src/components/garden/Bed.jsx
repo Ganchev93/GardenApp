@@ -1,18 +1,19 @@
 import { X } from 'lucide-react'
 import PlantSprite from './PlantSprite'
 import { toDateStr } from '../../lib/garden'
+import { TILE } from '../../lib/beds'
 
-export const CELL = 52
-export const BED_PAD = 8
+// One bed cell = one yard tile, so beds align exactly with the grass grid
+export const CELL = TILE
 
 export function bedSize(bed) {
-  return { w: bed.cols * CELL + BED_PAD * 2, h: bed.rows * CELL + BED_PAD * 2 }
+  return { w: bed.cols * TILE, h: bed.rows * TILE }
 }
 
 export function cellCenter(bed, cell) {
   return {
-    x: bed.x + BED_PAD + cell.col * CELL + CELL / 2,
-    y: bed.y + BED_PAD + cell.row * CELL + CELL / 2,
+    x: bed.x + cell.col * TILE + TILE / 2,
+    y: bed.y + cell.row * TILE + TILE / 2,
   }
 }
 
@@ -39,12 +40,12 @@ export default function Bed({
       style={editMode ? { cursor: 'grab' } : undefined}
     >
       {/* soil */}
-      <rect x={bed.x} y={bed.y} width={w} height={h} rx={12}
+      <rect x={bed.x + 1.5} y={bed.y + 1.5} width={w - 3} height={h - 3} rx={10}
         fill="#8A6644" stroke="#6E4F33" strokeWidth={3} filter="url(#bedShadow)" />
-      <rect x={bed.x + 4} y={bed.y + 4} width={w - 8} height={h - 8} rx={9}
+      <rect x={bed.x + 5} y={bed.y + 5} width={w - 10} height={h - 10} rx={8}
         fill="#7A5A3C" />
       {/* top-light edge for depth */}
-      <rect x={bed.x + 4} y={bed.y + 4} width={w - 8} height={5} rx={2.5}
+      <rect x={bed.x + 5} y={bed.y + 5} width={w - 10} height={5} rx={2.5}
         fill="rgba(255,255,255,0.08)" />
 
       {/* cell grid */}
@@ -54,8 +55,8 @@ export default function Bed({
         return (
           <g key={`${cell.row}-${cell.col}`}>
             <rect
-              x={x - CELL / 2 + 3} y={y - CELL / 2 + 3}
-              width={CELL - 6} height={CELL - 6} rx={7}
+              x={x - CELL / 2 + 6} y={y - CELL / 2 + 6}
+              width={CELL - 12} height={CELL - 12} rx={7}
               fill={occupied ? 'transparent' : 'rgba(0,0,0,0.13)'}
               stroke="rgba(0,0,0,0.10)" strokeWidth={1}
               style={!editMode && !occupied ? { cursor: 'pointer' } : undefined}

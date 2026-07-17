@@ -320,8 +320,8 @@ export default function GardenScene({
       g.bed.y += dy
       setDragBedPos({
         id: g.bed.id,
-        x: Math.round(g.bed.x / 10) * 10,
-        y: Math.round(g.bed.y / 10) * 10,
+        x: Math.round(g.bed.x / TILE) * TILE,
+        y: Math.round(g.bed.y / TILE) * TILE,
       })
       return
     }
@@ -390,15 +390,15 @@ export default function GardenScene({
     const cx = v.x + v.w / 2 - w / 2
     const cy = v.y + vh / 2 - h / 2
 
-    // prefer view center; otherwise nearest grass spot that fits
-    let x = Math.round(cx / 10) * 10
-    let y = Math.round(cy / 10) * 10
+    // prefer view center; otherwise nearest grass spot that fits (tile-aligned)
+    let x = Math.round(cx / TILE) * TILE
+    let y = Math.round(cy / TILE) * TILE
     if (!isOnGrass(x, y, w, h)) {
       let best = null
       yard.forEach(key => {
         const [r, c] = key.split('-').map(Number)
-        const tx = c * TILE + 4
-        const ty = r * TILE + 4
+        const tx = c * TILE
+        const ty = r * TILE
         if (!isOnGrass(tx, ty, w, h)) return
         const d = (tx - cx) ** 2 + (ty - cy) ** 2
         if (!best || d < best.d) best = { x: tx, y: ty, d }
