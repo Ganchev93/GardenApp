@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { db } from '../services/firebase'
 import {
   collection, onSnapshot, addDoc, updateDoc,
-  doc, serverTimestamp, Timestamp,
+  doc, serverTimestamp, Timestamp, arrayUnion,
 } from 'firebase/firestore'
 
 function addDays(date, days) {
@@ -80,10 +80,18 @@ export function useGarden(uid) {
     await updateDoc(doc(db, 'users', uid, 'garden', id), { photo: photoUrl })
   }
 
+  // journal photo: append to history + becomes the card thumbnail
+  async function addPhoto(id, url) {
+    await updateDoc(doc(db, 'users', uid, 'garden', id), {
+      photos: arrayUnion({ url, uploadedAt: new Date().toISOString() }),
+      photo: url,
+    })
+  }
+
   async function removePlant(id) {
     // soft delete — пази историята на зоната за сеитбооборот (v2)
     await updateDoc(doc(db, 'users', uid, 'garden', id), { removedAt: Timestamp.fromDate(new Date()) })
   }
 
-  return { plants, loading, addPlant, markWatered, markFertilized, updateNote, updatePhoto, removePlant, assignToBed, unassignFromBed }
+  return { plants, loading, addPlant, markWatered, markFertilized, updateNote, updatePhoto, addPhoto, removePlant, assignToBed, unassignFromBed }
 }

@@ -19,11 +19,15 @@ export function cellCenter(bed, cell) {
 
 export default function Bed({
   bed, entries, catalogById, badPairs, today,
-  editMode, invalid, justPlantedUid, wateringUid,
+  editMode, invalid, showLabels, justPlantedUid, wateringUid,
   onCellTap, onPlantTap, onBedPointerDown, onRemoveBed, onWarningTap,
   onPlantHover, onPlantHoverEnd,
 }) {
   const { w, h } = bedSize(bed)
+  const dueCount = entries.filter(e =>
+    toDateStr(e.nextWatering) <= today ||
+    (e.nextFertilizing && toDateStr(e.nextFertilizing) <= today)
+  ).length
   const byCell = {}
   entries.forEach(e => { byCell[`${e.cell.row}-${e.cell.col}`] = e })
 
@@ -87,6 +91,18 @@ export default function Bed({
         )
       })}
 
+      {/* plant name labels when zoomed in */}
+      {showLabels && entries.map(e => {
+        const { x, y } = cellCenter(bed, e.cell)
+        return (
+          <text key={`lbl-${e.id}`} x={x} y={y + 24} textAnchor="middle" fontSize="7.5"
+            fontWeight="600" fill="#FDFBF4" pointerEvents="none"
+            style={{ userSelect: 'none', paintOrder: 'stroke', stroke: 'rgba(60,45,30,0.55)', strokeWidth: 2 }}>
+            {e.name}
+          </text>
+        )
+      })}
+
       {/* bad neighbor warnings */}
       {badPairs.map((p, i) => {
         const a = cellCenter(bed, p.a.cell)
@@ -114,6 +130,17 @@ export default function Bed({
           {bed.name}
         </text>
       </g>
+
+      {/* due-care badge (bird's-eye view of where work waits) */}
+      {!editMode && dueCount > 0 && (
+        <g pointerEvents="none">
+          <circle cx={bed.x + w - 4} cy={bed.y + 4} r={9} fill="#E74C3C" stroke="#fff" strokeWidth={1.5} />
+          <text x={bed.x + w - 4} y={bed.y + 7.5} textAnchor="middle" fontSize="10"
+            fontWeight="700" fill="#fff" style={{ userSelect: 'none' }}>
+            {dueCount}
+          </text>
+        </g>
+      )}
 
       {editMode && (
         <g onClick={e => { e.stopPropagation(); onRemoveBed(bed.id) }} style={{ cursor: 'pointer' }}

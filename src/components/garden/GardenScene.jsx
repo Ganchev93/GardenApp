@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { Plus, Pencil, Check, Fence, Clock, Sunrise, Sun, Sunset, Moon, TreePine, X } from 'lucide-react'
+import { Plus, Pencil, Check, Fence, Clock, Sunrise, Sun, Sunset, Moon, TreePine, X, ZoomIn, ZoomOut, Maximize } from 'lucide-react'
 import { plants as catalog } from '../../data/plants'
 import { badPairsInBeds } from '../../lib/companions'
 import { dayPhase } from '../../lib/growth'
@@ -26,7 +26,7 @@ const STARS = [
   [230, 140], [660, 150], [880, 40], [440, 70],
 ]
 
-const GRASS_TONES = ['#CBE0AE', '#C3D9A4', '#D2E5B8']
+const GRASS_TONES = ['#BEDC96', '#B4D48A', '#C8E4A4']
 const grassTone = (r, c) => GRASS_TONES[(r * 7 + c * 13) % 3]
 
 const DECOR_TYPES = [
@@ -98,7 +98,7 @@ export default function GardenScene({
   yard, paths, decor, onYardChange, onPathsChange, onDecorChange,
   canAddBed, canAddPlant,
   onAddBed, onMoveBed, onRemoveBed,
-  onPlantNew, onAssign, onUnassign, onWater,
+  onPlantNew, onAssign, onUnassign, onWater, onAddPhoto,
 }) {
   const wrapRef = useRef(null)
   const svgRef = useRef(null)
@@ -374,6 +374,40 @@ export default function GardenScene({
     }
   }
 
+  // ── zoom controls ─────────────────────────────────────
+  function zoomBy(factor) {
+    setView(v => {
+      const w = Math.min(Math.max(v.w * factor, 320), 1500)
+      const vh2 = v.w * aspectRef.current
+      const cx = v.x + v.w / 2
+      const cy = v.y + vh2 / 2
+      return clampView({ w, x: cx - w / 2, y: cy - (w * aspectRef.current) / 2 })
+    })
+  }
+
+  function fitYard() {
+    if (yard.size === 0) return
+    let minR = Infinity, maxR = -Infinity, minC = Infinity, maxC = -Infinity
+    yard.forEach(key => {
+      const [r, c] = key.split('-').map(Number)
+      if (r < minR) minR = r
+      if (r > maxR) maxR = r
+      if (c < minC) minC = c
+      if (c > maxC) maxC = c
+    })
+    const pad = 70
+    const bx = minC * TILE - pad
+    const by = minR * TILE - pad
+    const bw = (maxC - minC + 1) * TILE + pad * 2
+    const bh = (maxR - minR + 1) * TILE + pad * 2
+    const w = Math.min(Math.max(Math.max(bw, bh / aspectRef.current), 320), 1500)
+    setView({
+      w,
+      x: bx - (w - bw) / 2,
+      y: by - (w * aspectRef.current - bh) / 2,
+    })
+  }
+
   // ── actions ───────────────────────────────────────────
   function addBed() {
     if (!canAddBed) {
@@ -591,6 +625,7 @@ export default function GardenScene({
             catalogById={catalogById}
             badPairs={badPairs.filter(p => p.bedId === bed.id)}
             editMode={mode === 'beds'}
+            showLabels={view.w < 560}
             invalid={dragBedPos?.id === bed.id && !isOnGrass(bed.x, bed.y, bedSize(bed).w, bedSize(bed).h)}
             justPlantedUid={justPlantedUid} wateringUid={wateringUid}
             onCellTap={tapGuard((b, cell) => setPicker({ bed: b, cell }))}
@@ -701,6 +736,21 @@ export default function GardenScene({
             style={{ borderLeft: '7px solid transparent', borderRight: '7px solid transparent', borderTop: '8px solid #E74C3C' }} />
         </div>
       )}
+
+      {/* zoom controls (bottom-left) */}
+      <div className="absolute bottom-3 left-3 flex flex-col gap-1.5">
+        {[
+          { Icon: ZoomIn, act: () => zoomBy(0.8), label: 'Приближи' },
+          { Icon: ZoomOut, act: () => zoomBy(1.25), label: 'Отдалечи' },
+          { Icon: Maximize, act: fitYard, label: 'Покажи целия двор' },
+        ].map(({ Icon, act, label }) => (
+          <button key={label} onClick={act} aria-label={label}
+            className="w-9 h-9 rounded-xl flex items-center justify-center"
+            style={{ background: 'rgba(255,255,255,0.92)', color: '#4A7C59', border: '1px solid #D4EDE0' }}>
+            <Icon size={16} />
+          </button>
+        ))}
+      </div>
 
       {/* phase preview (bottom-right) */}
       <PhaseButton value={phaseOverride} onChange={setPhaseOverride} />
@@ -844,6 +894,7 @@ export default function GardenScene({
           today={today}
           onWater={handleWater}
           onUnassign={id => { onUnassign(id); setSheet(null) }}
+          onAddPhoto={onAddPhoto}
           onClose={() => setSheet(null)} />
       )}
     </div>

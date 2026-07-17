@@ -9,6 +9,7 @@ import { useZones } from '../hooks/useZones'
 import { useLayout } from '../hooks/useLayout'
 import { useFreemium } from '../hooks/useFreemium'
 import { migratePocData } from '../lib/migratePoc'
+import { uploadImage } from '../services/cloudinary'
 import FreemiumGate from '../components/ui/FreemiumGate'
 import GardenScene from '../components/garden/GardenScene'
 import emptyBedImg from '../assets/empty-bed.png'
@@ -70,7 +71,7 @@ export default function MyGarden() {
   const {
     plants: myPlants, loading,
     addPlant, markWatered, markFertilized, updateNote, removePlant,
-    assignToBed, unassignFromBed,
+    assignToBed, unassignFromBed, addPhoto,
   } = useGarden(uid)
   const { zones: beds, loading: zonesLoading, addZone, moveZone, removeZone } = useZones(uid)
   const layout = useLayout(uid)
@@ -119,6 +120,10 @@ export default function MyGarden() {
   function waterById(id) {
     const p = myPlants.find(p => p.id === id)
     if (p) markWatered(id, p.watering_frequency_days)
+  }
+  async function photoUpload(id, file) {
+    const url = await uploadImage(file)
+    await addPhoto(id, url)
   }
 
   const isDue = p => toDateStr(p.nextWatering) <= today || (p.nextFertilizing && toDateStr(p.nextFertilizing) <= today)
@@ -173,7 +178,7 @@ export default function MyGarden() {
           canAddBed={canAddBed} canAddPlant={canAddPlant}
           onAddBed={addBed} onMoveBed={moveZone} onRemoveBed={removeBed}
           onPlantNew={plantNew} onAssign={assignToBed} onUnassign={unassignFromBed}
-          onWater={waterById} />
+          onWater={waterById} onAddPhoto={photoUpload} />
       )}
 
       {viewMode === 'list' && (<>
