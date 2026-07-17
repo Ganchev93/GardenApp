@@ -3,7 +3,8 @@ import { Plus, Pencil, Check, Fence, Clock, Sunrise, Sun, Sunset, Moon, TreePine
 import { plants as catalog } from '../../data/plants'
 import { badPairsInBeds } from '../../lib/companions'
 import { dayPhase } from '../../lib/growth'
-import { loadYard, saveYard, loadPaths, savePaths, loadDecor, saveDecor, TILE, YARD_COLS, YARD_ROWS } from '../../lib/beds'
+import { toDateStr } from '../../lib/garden'
+import { TILE, YARD_COLS, YARD_ROWS } from '../../lib/beds'
 import Bed, { bedSize, cellCenter } from './Bed'
 import Critters, { bloomSpotsFrom } from './Critters'
 import PlantPicker from './PlantPicker'
@@ -19,6 +20,11 @@ const PHASE_STYLE = {
   dusk:  { tint: '#FFB37A', opacity: 0.42 },
   night: { tint: '#7D90CE', opacity: 0.78 },
 }
+
+const STARS = [
+  [120, 60], [340, 100], [560, 45], [760, 90], [980, 55], [1100, 120],
+  [230, 140], [660, 150], [880, 40], [440, 70],
+]
 
 const GRASS_TONES = ['#CBE0AE', '#C3D9A4', '#D2E5B8']
 const grassTone = (r, c) => GRASS_TONES[(r * 7 + c * 13) % 3]
@@ -65,11 +71,6 @@ function TileNoise({ r, c }) {
   )
 }
 
-const STARS = [
-  [120, 60], [340, 100], [560, 45], [760, 90], [980, 55], [1100, 120],
-  [230, 140], [660, 150], [880, 40], [440, 70],
-]
-
 const PHASE_CYCLE = [
   { value: null, label: 'Сега', Icon: Clock },
   { value: 'dawn', label: 'Утро', Icon: Sunrise },
@@ -94,6 +95,8 @@ function PhaseButton({ value, onChange }) {
 
 export default function GardenScene({
   plants, beds,
+  yard, paths, decor, onYardChange, onPathsChange, onDecorChange,
+  canAddBed, canAddPlant,
   onAddBed, onMoveBed, onRemoveBed,
   onPlantNew, onAssign, onUnassign, onWater,
 }) {
@@ -102,9 +105,6 @@ export default function GardenScene({
   const [aspect, setAspect] = useState(0.62)
   const [view, setView] = useState({ x: 120, y: 100, w: 900 })
   const [mode, setMode] = useState('view')          // 'view' | 'beds' | 'yard'
-  const [yard, setYard] = useState(loadYard)
-  const [paths, setPaths] = useState(loadPaths)
-  const [decor, setDecor] = useState(loadDecor)
   const [brush, setBrush] = useState('grass')       // 'grass' | 'path' (yard mode)
   const [showDecor, setShowDecor] = useState(false)
   const [picker, setPicker] = useState(null)        // { bed, cell }
@@ -117,10 +117,22 @@ export default function GardenScene({
   const [wateringUid, setWateringUid] = useState(null)
   const [phase, setPhase] = useState(dayPhase)
   const [phaseOverride, setPhaseOverride] = useState(null)
-  const [invalidBedId, setInvalidBedId] = useState(null)
+  const [dragBedPos, setDragBedPos] = useState(null) // { id, x, y } live drag override
   const [toast, setToast] = useState(null)
-  const [warnPopup, setWarnPopup] = useState(null)   // { text, wx, wy }
+  const [warnPopup, setWarnPopup] = useState(null)   // { title, text, wx, wy }
   const [hover, setHover] = useState(null)           // { entry, stage, wx, wy }
+
+  const viewRef = useRef(view)
+  viewRef.current = view
+  const aspectRef = useRef(aspect)
+  aspectRef.current = aspect
+  const pointers = useRef(new Map())
+  const gesture = useRef({ type: null, moved: false, paintValue: null, bed: null, decor: null, pinch: null })
+
+  function flash(msg) {
+    setToast(msg)
+    setTimeout(() => setToast(null), 2600)
+  }
 
   useEffect(() => {
     if (!warnPopup) return
@@ -128,18 +140,6 @@ export default function GardenScene({
     document.addEventListener('pointerdown', close)
     return () => document.removeEventListener('pointerdown', close)
   }, [warnPopup])
-
-  function flash(msg) {
-    setToast(msg)
-    setTimeout(() => setToast(null), 2600)
-  }
-
-  const viewRef = useRef(view)
-  viewRef.current = view
-  const aspectRef = useRef(aspect)
-  aspectRef.current = aspect
-  const pointers = useRef(new Map())
-  const gesture = useRef({ type: null, moved: false, paintValue: null, bed: null, pinch: null })
 
   useEffect(() => {
     const el = wrapRef.current
@@ -153,10 +153,6 @@ export default function GardenScene({
     const t = setInterval(() => setPhase(dayPhase()), 60000)
     return () => clearInterval(t)
   }, [])
-
-  useEffect(() => { saveYard(yard) }, [yard])
-  useEffect(() => { savePaths(paths) }, [paths])
-  useEffect(() => { saveDecor(decor) }, [decor])
 
   // Non-passive wheel listener (React root wheel handlers are passive → preventDefault would fail)
   useEffect(() => {
@@ -181,10 +177,14 @@ export default function GardenScene({
   const unassigned = plants.filter(p => !p.bedId)
   const badPairs = useMemo(() => badPairsInBeds(planted, catalogById), [plants])
 
+  const displayBeds = dragBedPos
+    ? beds.map(b => b.id === dragBedPos.id ? { ...b, x: dragBedPos.x, y: dragBedPos.y } : b)
+    : beds
+
   const positions = {}
   planted.forEach(e => {
-    const bed = beds.find(b => b.id === e.bedId)
-    if (bed) positions[e.uid] = cellCenter(bed, e.cell)
+    const bed = displayBeds.find(b => b.id === e.bedId)
+    if (bed) positions[e.id] = cellCenter(bed, e.cell)
   })
   const bloomSpots = bloomSpotsFrom(planted, catalogById, positions)
 
@@ -233,9 +233,8 @@ export default function GardenScene({
     const add = gesture.current.paintValue
 
     if (brush === 'path') {
-      // paths live only on grass
       if (add && !yard.has(tile)) return
-      setPaths(prev => {
+      onPathsChange(prev => {
         if (add === prev.has(tile)) return prev
         const next = new Set(prev)
         if (add) next.add(tile)
@@ -245,14 +244,14 @@ export default function GardenScene({
       return
     }
 
-    setYard(prev => {
+    onYardChange(prev => {
       if (add === prev.has(tile)) return prev
       const next = new Set(prev)
       if (add) next.add(tile)
       else next.delete(tile)
       return next
     })
-    if (!add) setPaths(prev => {
+    if (!add) onPathsChange(prev => {
       if (!prev.has(tile)) return prev
       const next = new Set(prev)
       next.delete(tile)
@@ -277,14 +276,13 @@ export default function GardenScene({
       return
     }
 
-    // bed drag starts via onBedPointerDown (stopPropagation) — this is pan
     gesture.current = { type: 'pan', moved: false }
   }
 
   function onBedPointerDown(e, bed) {
     e.stopPropagation()
     pointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY })
-    gesture.current = { type: 'bed', moved: false, bed: { id: bed.id, x: bed.x, y: bed.y, origX: bed.x, origY: bed.y } }
+    gesture.current = { type: 'bed', moved: false, bed: { id: bed.id, x: bed.x, y: bed.y } }
   }
 
   function onDecorPointerDown(e, item) {
@@ -320,14 +318,11 @@ export default function GardenScene({
       if (!g.moved) { g.moved = true; try { svgRef.current.setPointerCapture(e.pointerId) } catch {} }
       g.bed.x += dx
       g.bed.y += dy
-      const bx = Math.round(g.bed.x / 10) * 10
-      const by = Math.round(g.bed.y / 10) * 10
-      onMoveBed(g.bed.id, bx, by)
-      const src = beds.find(b => b.id === g.bed.id)
-      if (src) {
-        const { w, h } = bedSize(src)
-        setInvalidBedId(isOnGrass(bx, by, w, h) ? null : g.bed.id)
-      }
+      setDragBedPos({
+        id: g.bed.id,
+        x: Math.round(g.bed.x / 10) * 10,
+        y: Math.round(g.bed.y / 10) * 10,
+      })
       return
     }
 
@@ -337,19 +332,12 @@ export default function GardenScene({
       g.decor.y += dy
       const gx = Math.round(g.decor.x / 5) * 5
       const gy = Math.round(g.decor.y / 5) * 5
-      setDecor(prev => prev.map(d => d.id !== g.decor.id ? d : { ...d, x: gx, y: gy }))
+      onDecorChange(prev => prev.map(d => d.id !== g.decor.id ? d : { ...d, x: gx, y: gy }))
       return
     }
 
     if (g.type === 'pan') {
-      if (!g.moved) {
-        const total = Math.hypot(e.clientX - prev.x, e.clientY - prev.y)
-        if (total < 3 && pointers.current.size === 1) {
-          // ignore micro-jitter before committing to a pan
-        }
-        g.moved = true
-        try { svgRef.current.setPointerCapture(e.pointerId) } catch {}
-      }
+      if (!g.moved) { g.moved = true; try { svgRef.current.setPointerCapture(e.pointerId) } catch {} }
       setView(v => clampView({ ...v, x: v.x - dx, y: v.y - dy }))
     }
   }
@@ -359,17 +347,18 @@ export default function GardenScene({
     try { svgRef.current.releasePointerCapture(e.pointerId) } catch {}
     const g = gesture.current
 
-    // dropping a bed on dirt → snap back to where the drag started
-    if (g.type === 'bed' && g.moved && g.bed) {
+    // dropping a bed: persist if on grass, otherwise snap back
+    if (g.type === 'bed' && g.moved && dragBedPos) {
       const src = beds.find(b => b.id === g.bed.id)
       if (src) {
         const { w, h } = bedSize(src)
-        if (!isOnGrass(src.x, src.y, w, h)) {
-          onMoveBed(g.bed.id, g.bed.origX, g.bed.origY)
+        if (isOnGrass(dragBedPos.x, dragBedPos.y, w, h)) {
+          onMoveBed(g.bed.id, dragBedPos.x, dragBedPos.y)
+        } else {
           flash('Лехите се поставят само върху трева')
         }
       }
-      setInvalidBedId(null)
+      setDragBedPos(null)
     }
 
     if (pointers.current.size === 0) {
@@ -387,6 +376,11 @@ export default function GardenScene({
 
   // ── actions ───────────────────────────────────────────
   function addBed() {
+    if (!canAddBed) {
+      setShowBedForm(false)
+      flash('Безплатният план позволява 1 леха — Premium за повече')
+      return
+    }
     const name = bedName.trim() || `Леха ${beds.length + 1}`
     const rows = Math.min(Math.max(bedRows, 1), 6)
     const cols = Math.min(Math.max(bedCols, 1), 8)
@@ -417,28 +411,34 @@ export default function GardenScene({
       y = best.y
     }
 
-    onAddBed({ id: Date.now(), name, rows, cols, x, y })
+    onAddBed({ name, rows, cols, x, y })
     setShowBedForm(false)
     setBedName('')
     setMode('beds')
   }
 
-  function handlePick(choice) {
+  async function handlePick(choice) {
     const { bed, cell } = picker
     if (choice.type === 'new') {
-      const uid = onPlantNew(bed.id, cell, choice.plant)
-      setJustPlantedUid(uid)
+      if (!canAddPlant) {
+        setPicker(null)
+        flash('Достигнат лимит на растения — Premium за повече')
+        return
+      }
+      setPicker(null)
+      const id = await onPlantNew(bed.id, cell, choice.plant)
+      setJustPlantedUid(id)
     } else {
-      onAssign(choice.entry.uid, bed.id, cell)
-      setJustPlantedUid(choice.entry.uid)
+      setPicker(null)
+      onAssign(choice.entry.id, bed.id, cell)
+      setJustPlantedUid(choice.entry.id)
     }
-    setPicker(null)
-    setTimeout(() => setJustPlantedUid(null), 700)
+    setTimeout(() => setJustPlantedUid(null), 900)
   }
 
-  function handleWater(uid) {
-    onWater(uid)
-    setWateringUid(uid)
+  function handleWater(id) {
+    onWater(id)
+    setWateringUid(id)
     setSheet(null)
     setTimeout(() => setWateringUid(null), 1100)
   }
@@ -585,13 +585,13 @@ export default function GardenScene({
           </g>
         )}
 
-        {mode !== 'yard' && beds.map(bed => (
+        {mode !== 'yard' && displayBeds.map(bed => (
           <Bed key={bed.id} bed={bed} today={today}
             entries={planted.filter(p => p.bedId === bed.id)}
             catalogById={catalogById}
-            badPairs={badPairs.filter(p => Number(p.bedId) === bed.id)}
+            badPairs={badPairs.filter(p => p.bedId === bed.id)}
             editMode={mode === 'beds'}
-            invalid={invalidBedId === bed.id}
+            invalid={dragBedPos?.id === bed.id && !isOnGrass(bed.x, bed.y, bedSize(bed).w, bedSize(bed).h)}
             justPlantedUid={justPlantedUid} wateringUid={wateringUid}
             onCellTap={tapGuard((b, cell) => setPicker({ bed: b, cell }))}
             onPlantTap={tapGuard(entry => setSheet(entry))}
@@ -629,7 +629,7 @@ export default function GardenScene({
                 {def.emoji}
               </text>
               {mode === 'beds' && (
-                <g onClick={e => { e.stopPropagation(); setDecor(prev => prev.filter(d => d.id !== item.id)) }}
+                <g onClick={e => { e.stopPropagation(); onDecorChange(prev => prev.filter(d => d.id !== item.id)) }}
                   onPointerDown={e => e.stopPropagation()} style={{ cursor: 'pointer' }}>
                   <circle cx={item.x + def.size * 0.45} cy={item.y - def.size * 0.5} r={8} fill="#E74C3C" />
                   <text x={item.x + def.size * 0.45} y={item.y - def.size * 0.5 + 3.5} textAnchor="middle"
@@ -675,9 +675,9 @@ export default function GardenScene({
             <p className="text-[10px]" style={{ color: '#B3D9C4' }}>
               {{ seed: 'семе', sprout: 'кълн', young: 'младо растение', mature: 'зряло' }[hover.stage]}
               {' · '}
-              {hover.entry.nextWatering <= today
+              {toDateStr(hover.entry.nextWatering) <= today
                 ? 'чака поливане'
-                : `поливане след ${Math.max(1, Math.round((new Date(hover.entry.nextWatering) - new Date(today)) / 86400000))} дни`}
+                : `поливане след ${Math.max(1, Math.round((new Date(toDateStr(hover.entry.nextWatering)) - new Date(today)) / 86400000))} дни`}
             </p>
           </div>
           <div className="mx-auto w-0 h-0"
@@ -703,7 +703,7 @@ export default function GardenScene({
       )}
 
       {/* phase preview (bottom-right) */}
-      <PhaseButton value={phaseOverride} onChange={setPhaseOverride} autoPhase={phase} />
+      <PhaseButton value={phaseOverride} onChange={setPhaseOverride} />
 
       {/* controls */}
       <div className="absolute top-3 right-3 flex gap-2">
@@ -749,7 +749,7 @@ export default function GardenScene({
                 onClick={() => {
                   const v = viewRef.current
                   const vh2 = v.w * aspectRef.current
-                  setDecor(prev => [...prev, {
+                  onDecorChange(prev => [...prev, {
                     id: Date.now(), type: d.type,
                     x: Math.round((v.x + v.w / 2) / 5) * 5,
                     y: Math.round((v.y + vh2 / 2) / 5) * 5,
@@ -839,11 +839,11 @@ export default function GardenScene({
       )}
 
       {sheet && (
-        <PlantSheet entry={plants.find(p => p.uid === sheet.uid) || sheet}
+        <PlantSheet entry={plants.find(p => p.id === sheet.id) || sheet}
           bedName={beds.find(b => b.id === sheet.bedId)?.name || ''}
           today={today}
           onWater={handleWater}
-          onUnassign={uid => { onUnassign(uid); setSheet(null) }}
+          onUnassign={id => { onUnassign(id); setSheet(null) }}
           onClose={() => setSheet(null)} />
       )}
     </div>

@@ -2,7 +2,8 @@ import { useState, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { Camera, Image as ImageIcon, ScanSearch, Leaf, Sprout, AlertCircle, Check, Loader2 } from 'lucide-react'
 import { plants } from '../data/plants'
-import { loadGarden, saveGarden, addDays, todayStr } from '../lib/garden'
+import { useAuth } from '../hooks/useAuth'
+import { useGarden } from '../hooks/useGarden'
 
 const GROQ_KEY = import.meta.env.VITE_GROQ_API_KEY || ''
 
@@ -13,6 +14,8 @@ function guessPlant(text) {
 }
 
 export default function Analyze() {
+  const { user } = useAuth()
+  const { addPlant } = useGarden(user?.uid)
   const [image, setImage] = useState(null)
   const [preview, setPreview] = useState(null)
   const [result, setResult] = useState(null)
@@ -105,31 +108,23 @@ export default function Analyze() {
     if (!selectedPlantId) return
     const plant = plants.find(p => p.id === Number(selectedPlantId))
     if (!plant) return
-    const today = todayStr()
-    const garden = loadGarden()
-    // small thumbnail — full-size base64 photos overflow the localStorage quota
+    // small thumbnail — Cloudinary replaces this in the AI migration task
     let photo = null
     if (image) {
       try { photo = `data:image/jpeg;base64,${await toBase64(image, 400)}` } catch {}
     }
-    garden.push({
-      uid: Date.now(),
+    await addPlant({
       plantId: plant.id,
       name: plant.name,
       emoji: plant.emoji,
       category: plant.category,
       photo,
-      lastWatered: today,
-      nextWatering: addDays(today, plant.watering.frequency_days),
       watering_frequency_days: plant.watering.frequency_days,
       watering_amount: plant.watering.amount,
-      lastFertilized: today,
-      nextFertilizing: plant.fertilizing.frequency_days === 0 ? null : addDays(today, plant.fertilizing.frequency_days),
-      frequency_days: plant.fertilizing.frequency_days,
+      fertilizing_frequency_days: plant.fertilizing.frequency_days,
       fertilizer_type: plant.fertilizing.fertilizer_type,
       dose: plant.fertilizing.dose,
     })
-    saveGarden(garden)
     setAdded(true)
     setShowAddForm(false)
   }

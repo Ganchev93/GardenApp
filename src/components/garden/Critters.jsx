@@ -34,6 +34,6 @@ export default function Critters({ phase, bloomSpots }) {
 export function bloomSpotsFrom(entries, catalogById, positions) {
   return entries
     .filter(e => e.bedId && e.cell && isBloomMonth(catalogById[e.plantId]?.calendar))
-    .map(e => positions[e.uid])
+    .map(e => positions[e.id])
     .filter(Boolean)
 }

@@ -55,7 +55,7 @@ export default function PlantPicker({ bed, bedEntries, unassigned, onPick, onClo
           <>
             <p className="text-xs font-semibold mb-1.5" style={{ color: '#9CA3AF' }}>ОТ ГРАДИНАТА ТИ</p>
             {ownMatches.map(p => (
-              <PickRow key={`own-${p.uid}`} emoji={p.emoji} name={p.name}
+              <PickRow key={`own-${p.id}`} emoji={p.emoji} name={p.name}
                 hints={companionHints(catalogById[p.plantId], bedEntries, catalogById)}
                 badge="премести тук"
                 onClick={() => onPick({ type: 'assign', entry: p })} />

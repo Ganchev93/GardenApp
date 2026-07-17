@@ -24,3 +24,10 @@ export function addDays(dateStr, days) {
 export function todayStr() {
   return new Date().toISOString().slice(0, 10)
 }
+
+// Firestore Timestamp | ISO string | Date → 'YYYY-MM-DD' ('' if null)
+export function toDateStr(ts) {
+  if (!ts) return ''
+  const d = ts.toDate ? ts.toDate() : new Date(ts)
+  return d.toISOString().slice(0, 10)
+}

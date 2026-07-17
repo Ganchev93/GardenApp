@@ -1,5 +1,6 @@
 import { X } from 'lucide-react'
 import PlantSprite from './PlantSprite'
+import { toDateStr } from '../../lib/garden'
 
 export const CELL = 52
 export const BED_PAD = 8
@@ -75,12 +76,12 @@ export default function Bed({
       {/* plants */}
       {entries.map(e => {
         const { x, y } = cellCenter(bed, e.cell)
-        const thirsty = e.nextWatering <= today
+        const thirsty = toDateStr(e.nextWatering) <= today
         return (
-          <PlantSprite key={e.uid} entry={e} cat={catalogById[e.plantId]}
+          <PlantSprite key={e.id} entry={e} cat={catalogById[e.plantId]}
             cx={x} cy={y} thirsty={thirsty}
-            justPlanted={e.uid === justPlantedUid}
-            watering={e.uid === wateringUid}
+            justPlanted={e.id === justPlantedUid}
+            watering={e.id === wateringUid}
             onTap={onPlantTap} onHover={onPlantHover} onHoverEnd={onPlantHoverEnd} />
         )
       })}

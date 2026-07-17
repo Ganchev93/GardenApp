@@ -6,7 +6,7 @@ export const TILE = 60
 export const YARD_COLS = 20
 export const YARD_ROWS = 13
 
-function defaultYard() {
+export function defaultYard() {
   const tiles = []
   for (let r = 3; r < 10; r++) {
     for (let c = 5; c < 15; c++) tiles.push(`${r}-${c}`)

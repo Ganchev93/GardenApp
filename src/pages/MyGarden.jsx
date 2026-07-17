@@ -1,9 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Droplets, Sprout, Bug, X, NotebookPen, Plus, CalendarDays, Search, Map, List } from 'lucide-react'
 import { plants as catalog } from '../data/plants'
 import { ACTIVITIES } from '../components/PlantTimeline'
-import { loadGarden, saveGarden, addDays } from '../lib/garden'
-import { loadBeds, saveBeds } from '../lib/beds'
+import { toDateStr, todayStr } from '../lib/garden'
+import { useAuth } from '../hooks/useAuth'
+import { useGarden } from '../hooks/useGarden'
+import { useZones } from '../hooks/useZones'
+import { useLayout } from '../hooks/useLayout'
+import { useFreemium } from '../hooks/useFreemium'
+import { migratePocData } from '../lib/migratePoc'
+import FreemiumGate from '../components/ui/FreemiumGate'
 import GardenScene from '../components/garden/GardenScene'
 import emptyBedImg from '../assets/empty-bed.png'
 
@@ -43,108 +49,92 @@ function ViewToggle({ mode, setMode }) {
   )
 }
 
+function plantDoc(plant, extra = {}) {
+  return {
+    plantId: plant.id,
+    name: plant.name,
+    emoji: plant.emoji,
+    category: plant.category,
+    watering_frequency_days: plant.watering.frequency_days,
+    watering_amount: plant.watering.amount,
+    fertilizing_frequency_days: plant.fertilizing.frequency_days,
+    fertilizer_type: plant.fertilizing.fertilizer_type,
+    dose: plant.fertilizing.dose,
+    ...extra,
+  }
+}
+
 export default function MyGarden() {
-  const [myPlants, setMyPlants] = useState(loadGarden)
+  const { user } = useAuth()
+  const uid = user?.uid
+  const {
+    plants: myPlants, loading,
+    addPlant, markWatered, markFertilized, updateNote, removePlant,
+    assignToBed, unassignFromBed,
+  } = useGarden(uid)
+  const { zones: beds, loading: zonesLoading, addZone, moveZone, removeZone } = useZones(uid)
+  const layout = useLayout(uid)
+  const { canAddPlant, role } = useFreemium()
+  const canAddBed = role !== 'free' || beds.length < 1
+
   const [viewMode, setViewMode] = useState('map')
-  const [beds, setBeds] = useState(loadBeds)
   const [showAdd, setShowAdd] = useState(false)
   const [selectedId, setSelectedId] = useState('')
   const [query, setQuery] = useState('')
-  const [lastWatered, setLastWatered] = useState(new Date().toISOString().slice(0, 10))
-  const [lastFertilized, setLastFertilized] = useState(new Date().toISOString().slice(0, 10))
+  const [lastWatered, setLastWatered] = useState(todayStr)
+  const [lastFertilized, setLastFertilized] = useState(todayStr)
   const [photoView, setPhotoView] = useState(null)
 
-  useEffect(() => { saveGarden(myPlants) }, [myPlants])
-
-  const today = new Date().toISOString().slice(0, 10)
+  const today = todayStr()
   const matches = catalog.filter(p => p.name.toLowerCase().includes(query.toLowerCase())).slice(0, 8)
 
-  function addPlant() {
+  // One-time import of PoC localStorage data
+  const migrated = useRef(false)
+  useEffect(() => {
+    if (migrated.current || loading || zonesLoading || !layout.loaded || !uid) return
+    if (layout.pocMigrated || myPlants.length || beds.length) { migrated.current = true; return }
+    migrated.current = true
+    migratePocData(uid)
+  }, [loading, zonesLoading, layout.loaded, layout.pocMigrated, myPlants.length, beds.length, uid])
+
+  async function handleAdd() {
     if (!selectedId) return
     const plant = catalog.find(p => p.id === Number(selectedId))
     if (!plant) return
-    setMyPlants(prev => [...prev, {
-      uid: Date.now(),
-      plantId: plant.id,
-      name: plant.name,
-      emoji: plant.emoji,
-      category: plant.category,
-      lastWatered,
-      nextWatering: addDays(lastWatered, plant.watering.frequency_days),
-      watering_frequency_days: plant.watering.frequency_days,
-      watering_amount: plant.watering.amount,
-      lastFertilized,
-      nextFertilizing: plant.fertilizing.frequency_days === 0 ? null : addDays(lastFertilized, plant.fertilizing.frequency_days),
-      frequency_days: plant.fertilizing.frequency_days,
-      fertilizer_type: plant.fertilizing.fertilizer_type,
-      dose: plant.fertilizing.dose,
-    }])
+    await addPlant(plantDoc(plant, { lastWatered, lastFertilized }))
     setShowAdd(false)
     setSelectedId('')
     setQuery('')
   }
 
-  function markWatered(uid) {
-    setMyPlants(prev => prev.map(p => p.uid !== uid ? p : {
-      ...p, lastWatered: today, nextWatering: addDays(today, p.watering_frequency_days),
-    }))
-  }
-  function markFertilized(uid) {
-    setMyPlants(prev => prev.map(p => p.uid !== uid ? p : {
-      ...p, lastFertilized: today, nextFertilizing: p.frequency_days === 0 ? null : addDays(today, p.frequency_days),
-    }))
-  }
-  function removePlant(uid) { setMyPlants(prev => prev.filter(p => p.uid !== uid)) }
-  function updateNote(uid, note) { setMyPlants(prev => prev.map(p => p.uid !== uid ? p : { ...p, note })) }
-
-  // ── виртуална градина ──────────────────────────────
-  useEffect(() => { saveBeds(beds) }, [beds])
-
+  // scene callbacks
   function plantNew(bedId, cell, plant) {
-    const uid = Date.now()
-    setMyPlants(prev => [...prev, {
-      uid,
-      plantId: plant.id,
-      name: plant.name,
-      emoji: plant.emoji,
-      category: plant.category,
-      bedId, cell,
-      plantedAt: today,
-      lastWatered: today,
-      nextWatering: addDays(today, plant.watering.frequency_days),
-      watering_frequency_days: plant.watering.frequency_days,
-      watering_amount: plant.watering.amount,
-      lastFertilized: today,
-      nextFertilizing: plant.fertilizing.frequency_days === 0 ? null : addDays(today, plant.fertilizing.frequency_days),
-      frequency_days: plant.fertilizing.frequency_days,
-      fertilizer_type: plant.fertilizing.fertilizer_type,
-      dose: plant.fertilizing.dose,
-    }])
-    return uid
+    return addPlant(plantDoc(plant, { bedId, cell, plantedAt: today }))
   }
-
-  function assignToBed(uid, bedId, cell) {
-    setMyPlants(prev => prev.map(p => p.uid !== uid ? p : { ...p, bedId, cell }))
-  }
-  function unassignFromBed(uid) {
-    setMyPlants(prev => prev.map(p => p.uid !== uid ? p : { ...p, bedId: null, cell: null }))
-  }
-  function addBed(bed) { setBeds(prev => [...prev, bed]) }
-  function moveBed(id, x, y) { setBeds(prev => prev.map(b => b.id !== id ? b : { ...b, x, y })) }
+  async function addBed(bed) { await addZone(bed) }
   function removeBed(id) {
-    setBeds(prev => prev.filter(b => b.id !== id))
-    setMyPlants(prev => prev.map(p => p.bedId !== id ? p : { ...p, bedId: null, cell: null }))
+    removeZone(id)
+    myPlants.filter(p => p.bedId === id).forEach(p => unassignFromBed(p.id))
+  }
+  function waterById(id) {
+    const p = myPlants.find(p => p.id === id)
+    if (p) markWatered(id, p.watering_frequency_days)
   }
 
-  const urgentCount = myPlants.filter(p => p.nextWatering <= today || (p.nextFertilizing && p.nextFertilizing <= today)).length
+  const isDue = p => toDateStr(p.nextWatering) <= today || (p.nextFertilizing && toDateStr(p.nextFertilizing) <= today)
+  const urgentCount = myPlants.filter(isDue).length
 
   const sorted = [...myPlants].sort((a, b) => {
-    const aU = a.nextWatering <= today || (a.nextFertilizing && a.nextFertilizing <= today)
-    const bU = b.nextWatering <= today || (b.nextFertilizing && b.nextFertilizing <= today)
+    const aU = isDue(a)
+    const bU = isDue(b)
     if (aU && !bU) return -1
     if (!aU && bU) return 1
-    return new Date(a.nextWatering) - new Date(b.nextWatering)
+    return new Date(toDateStr(a.nextWatering)) - new Date(toDateStr(b.nextWatering))
   })
+
+  if (loading || zonesLoading || !layout.loaded) {
+    return <div className="text-center py-12 text-sm" style={{ color: '#9CA3AF' }}>Зареждане...</div>
+  }
 
   return (
     <div>
@@ -178,13 +168,17 @@ export default function MyGarden() {
       {viewMode === 'map' && (
         <GardenScene
           plants={myPlants} beds={beds}
-          onAddBed={addBed} onMoveBed={moveBed} onRemoveBed={removeBed}
+          yard={layout.yard} paths={layout.paths} decor={layout.decor}
+          onYardChange={layout.setYard} onPathsChange={layout.setPaths} onDecorChange={layout.setDecor}
+          canAddBed={canAddBed} canAddPlant={canAddPlant}
+          onAddBed={addBed} onMoveBed={moveZone} onRemoveBed={removeBed}
           onPlantNew={plantNew} onAssign={assignToBed} onUnassign={unassignFromBed}
-          onWater={markWatered} />
+          onWater={waterById} />
       )}
 
       {viewMode === 'list' && (<>
       {showAdd && (
+        <FreemiumGate show={!canAddPlant} type="plants">
         <div className="rounded-2xl p-4 mb-4" style={{ background: '#fff', border: '1px solid #D4EDE0' }}>
           <h3 className="font-semibold mb-3" style={{ color: '#1C2B23' }}>Добави растение</h3>
           <div className="relative mb-3">
@@ -233,7 +227,7 @@ export default function MyGarden() {
             </div>
           </div>
           <div className="flex gap-2">
-            <button onClick={addPlant}
+            <button onClick={handleAdd}
               className="flex-1 py-2.5 rounded-xl text-sm font-semibold transition-opacity hover:opacity-90"
               style={{ background: '#4A7C59', color: '#fff' }}>Добави</button>
             <button onClick={() => setShowAdd(false)}
@@ -241,6 +235,7 @@ export default function MyGarden() {
               style={{ border: '1px solid #B3D9C4', color: '#4A7C59', background: '#fff' }}>Откажи</button>
           </div>
         </div>
+        </FreemiumGate>
       )}
 
       <ThisMonth myPlants={myPlants} />
@@ -255,12 +250,12 @@ export default function MyGarden() {
 
       <div className="grid gap-3 lg:grid-cols-2 lg:items-start">
         {sorted.map(p => (
-          <PlantCard key={p.uid} plant={p} today={today}
-            onMarkWatered={markWatered}
-            onMarkFertilized={markFertilized}
-            onRemove={removePlant}
+          <PlantCard key={p.id} plant={p} today={today}
+            onMarkWatered={() => markWatered(p.id, p.watering_frequency_days)}
+            onMarkFertilized={() => markFertilized(p.id, p.fertilizing_frequency_days)}
+            onRemove={() => removePlant(p.id)}
             onPhotoView={setPhotoView}
-            onNote={updateNote} />
+            onNote={note => updateNote(p.id, note)} />
         ))}
       </div>
       </>)}
@@ -272,11 +267,13 @@ function PlantCard({ plant, today, onMarkWatered, onMarkFertilized, onRemove, on
   const [editingNote, setEditingNote] = useState(false)
   const [noteVal, setNoteVal] = useState(plant.note || '')
 
-  const noFertilize = !plant.nextFertilizing
-  const waterDue = plant.nextWatering <= today
-  const fertilizeDue = !noFertilize && plant.nextFertilizing <= today
-  const waterDays = Math.ceil((new Date(plant.nextWatering) - new Date()) / 86400000)
-  const fertilizeDays = noFertilize ? null : Math.ceil((new Date(plant.nextFertilizing) - new Date()) / 86400000)
+  const nextWatering = toDateStr(plant.nextWatering)
+  const nextFertilizing = toDateStr(plant.nextFertilizing)
+  const noFertilize = !nextFertilizing
+  const waterDue = nextWatering <= today
+  const fertilizeDue = !noFertilize && nextFertilizing <= today
+  const waterDays = Math.ceil((new Date(nextWatering) - new Date()) / 86400000)
+  const fertilizeDays = noFertilize ? null : Math.ceil((new Date(nextFertilizing) - new Date()) / 86400000)
   const isUrgent = waterDue || fertilizeDue
 
   const catalogPlant = catalog.find(p => p.id === plant.plantId)
@@ -310,7 +307,7 @@ function PlantCard({ plant, today, onMarkWatered, onMarkFertilized, onRemove, on
             <span className="text-xs" style={{ color: healthColor }}>{healthLabel}</span>
           </div>
         </div>
-        <button onClick={() => onRemove(plant.uid)}
+        <button onClick={onRemove}
           className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
           style={{ color: '#9CA3AF', border: '1px solid #E5E7EB' }}>
           <X size={13} />
@@ -328,7 +325,7 @@ function PlantCard({ plant, today, onMarkWatered, onMarkFertilized, onRemove, on
           </span>
           <span className="text-xs ml-2" style={{ color: '#9CA3AF' }}>{plant.watering_amount}</span>
         </div>
-        <button onClick={() => onMarkWatered(plant.uid)}
+        <button onClick={onMarkWatered}
           className="text-xs px-3 py-1 rounded-lg font-semibold shrink-0 transition-transform active:scale-90"
           style={{ background: waterDue ? '#2563EB' : '#EDE8DF', color: waterDue ? '#fff' : '#6A9E78' }}>
           Полято
@@ -343,11 +340,11 @@ function PlantCard({ plant, today, onMarkWatered, onMarkFertilized, onRemove, on
             {noFertilize ? 'Не се тори' : dayLabel(fertilizeDays, fertilizeDue)}
           </span>
           <span className="text-xs ml-2 truncate" style={{ color: '#9CA3AF' }}>
-            {noFertilize ? 'по нужда' : plant.fertilizer_type.split(' ').slice(0,3).join(' ')}
+            {noFertilize ? 'по нужда' : plant.fertilizer_type.split(' ').slice(0, 3).join(' ')}
           </span>
         </div>
         {!noFertilize && (
-          <button onClick={() => onMarkFertilized(plant.uid)}
+          <button onClick={onMarkFertilized}
             className="text-xs px-3 py-1 rounded-lg font-semibold shrink-0 transition-transform active:scale-90"
             style={{ background: fertilizeDue ? '#C97D0E' : '#EDE8DF', color: fertilizeDue ? '#fff' : '#6A9E78' }}>
             Торено
@@ -375,13 +372,13 @@ function PlantCard({ plant, today, onMarkWatered, onMarkFertilized, onRemove, on
           <input autoFocus value={noteVal}
             onChange={e => setNoteVal(e.target.value)}
             onKeyDown={e => {
-              if (e.key === 'Enter') { onNote(plant.uid, noteVal); setEditingNote(false) }
+              if (e.key === 'Enter') { onNote(noteVal); setEditingNote(false) }
               if (e.key === 'Escape') { setNoteVal(plant.note || ''); setEditingNote(false) }
             }}
             placeholder="Добави бележка..."
             className="flex-1 rounded-lg px-2.5 py-1.5 text-xs focus:outline-none"
             style={{ border: '1px solid #B3D9C4', background: '#F5F2EC', color: '#1C2B23' }} />
-          <button onClick={() => { onNote(plant.uid, noteVal); setEditingNote(false) }}
+          <button onClick={() => { onNote(noteVal); setEditingNote(false) }}
             className="text-xs px-2.5 py-1.5 rounded-lg font-semibold"
             style={{ background: '#4A7C59', color: '#fff' }}>OK</button>
         </div>

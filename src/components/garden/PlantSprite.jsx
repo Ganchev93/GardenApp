@@ -4,9 +4,10 @@ import { growthStage, isHarvestMonth } from '../../lib/growth'
 export default function PlantSprite({ entry, cat, cx, cy, thirsty, justPlanted, watering, onTap, onHover, onHoverEnd }) {
   const stage = growthStage(entry.plantedAt, entry.category)
   const harvest = stage === 'mature' && isHarvestMonth(cat?.calendar)
-  // Randomized but stable per-plant sway rhythm
-  const swayDur = 2.8 + (entry.uid % 17) / 10
-  const swayDelay = -((entry.uid % 31) / 10)
+  // Randomized but stable per-plant sway rhythm (id may be a Firestore string)
+  const seed = [...String(entry.id)].reduce((a, ch) => a + ch.charCodeAt(0), 0)
+  const swayDur = 2.8 + (seed % 17) / 10
+  const swayDelay = -((seed % 31) / 10)
 
   return (
     <g onClick={e => { e.stopPropagation(); onTap(entry) }} style={{ cursor: 'pointer' }}

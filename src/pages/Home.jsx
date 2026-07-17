@@ -1,9 +1,9 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Check, Droplets, Sprout, BookOpen, Camera, ChevronRight } from 'lucide-react'
 import WeatherWidget from '../components/WeatherWidget'
-import { loadGarden, saveGarden, addDays, todayStr } from '../lib/garden'
+import { todayStr, toDateStr } from '../lib/garden'
 import { useAuth } from '../hooks/useAuth'
+import { useGarden } from '../hooks/useGarden'
 import { plants as catalog } from '../data/plants'
 import gardenImg from '../assets/garden.png'
 
@@ -19,44 +19,48 @@ function daysLabel(n) {
   return n === 1 ? 'след 1 ден' : `след ${n} дни`
 }
 
+function addDaysStr(dateStr, days) {
+  const d = new Date(dateStr)
+  d.setDate(d.getDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
 export default function Home() {
   const { user } = useAuth()
   const firstName = (user?.displayName || '').split(' ')[0]
-  const [myPlants, setMyPlants] = useState(loadGarden)
+  const { plants: myPlants, markWatered: water, markFertilized: fertilize } = useGarden(user?.uid)
   const today = todayStr()
 
-  function update(next) {
-    setMyPlants(next)
-    saveGarden(next)
+  function markWatered(id) {
+    const p = myPlants.find(p => p.id === id)
+    if (p) water(id, p.watering_frequency_days)
   }
-  function markWatered(uid) {
-    update(myPlants.map(p => p.uid !== uid ? p : {
-      ...p, lastWatered: today, nextWatering: addDays(today, p.watering_frequency_days),
-    }))
-  }
-  function markFertilized(uid) {
-    update(myPlants.map(p => p.uid !== uid ? p : {
-      ...p, lastFertilized: today, nextFertilizing: addDays(today, p.frequency_days),
-    }))
+  function markFertilized(id) {
+    const p = myPlants.find(p => p.id === id)
+    if (p) fertilize(id, p.fertilizing_frequency_days)
   }
 
   const dueTasks = []
   let doneToday = 0
   myPlants.forEach(p => {
-    if (p.nextWatering <= today) dueTasks.push({ ...p, type: 'water' })
-    else if (p.lastWatered === today) doneToday++
-    if (p.nextFertilizing <= today) dueTasks.push({ ...p, type: 'fertilize' })
-    else if (p.lastFertilized === today) doneToday++
+    const nextW = toDateStr(p.nextWatering)
+    const nextF = toDateStr(p.nextFertilizing)
+    if (nextW <= today) dueTasks.push({ ...p, type: 'water' })
+    else if (toDateStr(p.lastWatered) === today) doneToday++
+    if (nextF && nextF <= today) dueTasks.push({ ...p, type: 'fertilize' })
+    else if (nextF && toDateStr(p.lastFertilized) === today) doneToday++
   })
   const totalToday = dueTasks.length + doneToday
 
-  const limit = addDays(today, 7)
+  const limit = addDaysStr(today, 7)
   const upcoming = []
   myPlants.forEach(p => {
-    if (p.nextWatering > today && p.nextWatering <= limit)
-      upcoming.push({ ...p, type: 'water', date: p.nextWatering })
-    if (p.nextFertilizing > today && p.nextFertilizing <= limit)
-      upcoming.push({ ...p, type: 'fertilize', date: p.nextFertilizing })
+    const nextW = toDateStr(p.nextWatering)
+    const nextF = toDateStr(p.nextFertilizing)
+    if (nextW > today && nextW <= limit)
+      upcoming.push({ ...p, type: 'water', date: nextW })
+    if (nextF && nextF > today && nextF <= limit)
+      upcoming.push({ ...p, type: 'fertilize', date: nextF })
   })
   upcoming.sort((a, b) => a.date.localeCompare(b.date))
 
@@ -105,7 +109,7 @@ export default function Home() {
           </p>
           <div>
             {upcoming.slice(0, 5).map((t, i) => (
-              <UpcomingRow key={`${t.uid}-${t.type}`} task={t} today={today} last={i === Math.min(upcoming.length, 5) - 1} />
+              <UpcomingRow key={`${t.id}-${t.type}`} task={t} today={today} last={i === Math.min(upcoming.length, 5) - 1} />
             ))}
           </div>
         </section>
@@ -174,7 +178,7 @@ function TodayCard({ dueTasks, doneToday, totalToday, onWater, onFertilize }) {
           {dueTasks.map(t => {
             const isWater = t.type === 'water'
             return (
-              <div key={`${t.uid}-${t.type}`}
+              <div key={`${t.id}-${t.type}`}
                 className="flex items-center gap-3 rounded-xl px-3 py-2.5"
                 style={{ background: 'rgba(255,255,255,0.13)' }}>
                 <span className="text-lg leading-none shrink-0">{t.emoji}</span>
@@ -186,7 +190,7 @@ function TodayCard({ dueTasks, doneToday, totalToday, onWater, onFertilize }) {
                   </div>
                 </div>
                 <button
-                  onClick={() => isWater ? onWater(t.uid) : onFertilize(t.uid)}
+                  onClick={() => isWater ? onWater(t.id) : onFertilize(t.id)}
                   className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-transform active:scale-90"
                   style={{ background: '#fff', color: '#2D5540' }}
                   aria-label="Готово"

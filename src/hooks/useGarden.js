@@ -26,17 +26,33 @@ export function useGarden(uid) {
 
   async function addPlant(plant) {
     const today = new Date()
-    await addDoc(collection(db, 'users', uid, 'garden'), {
+    const lastWatered = plant.lastWatered ? new Date(plant.lastWatered) : today
+    const lastFertilized = plant.lastFertilized ? new Date(plant.lastFertilized) : today
+    const ref = await addDoc(collection(db, 'users', uid, 'garden'), {
       ...plant,
-      zoneId: plant.zoneId || null,
-      lastWatered: Timestamp.fromDate(today),
-      nextWatering: Timestamp.fromDate(addDays(today, plant.watering_frequency_days)),
-      lastFertilized: Timestamp.fromDate(today),
-      nextFertilizing: Timestamp.fromDate(addDays(today, plant.fertilizing_frequency_days)),
+      bedId: plant.bedId || null,
+      cell: plant.cell || null,
+      plantedAt: plant.plantedAt || null,
+      photo: plant.photo || null,
+      lastWatered: Timestamp.fromDate(lastWatered),
+      nextWatering: Timestamp.fromDate(addDays(lastWatered, plant.watering_frequency_days)),
+      lastFertilized: Timestamp.fromDate(lastFertilized),
+      nextFertilizing: plant.fertilizing_frequency_days > 0
+        ? Timestamp.fromDate(addDays(lastFertilized, plant.fertilizing_frequency_days))
+        : null,
       photos: [],
       note: '',
       createdAt: serverTimestamp(),
     })
+    return ref.id
+  }
+
+  async function assignToBed(id, bedId, cell) {
+    await updateDoc(doc(db, 'users', uid, 'garden', id), { bedId, cell })
+  }
+
+  async function unassignFromBed(id) {
+    await updateDoc(doc(db, 'users', uid, 'garden', id), { bedId: null, cell: null })
   }
 
   async function markWatered(id, watering_frequency_days) {
@@ -48,6 +64,7 @@ export function useGarden(uid) {
   }
 
   async function markFertilized(id, fertilizing_frequency_days) {
+    if (!fertilizing_frequency_days) return
     const today = new Date()
     await updateDoc(doc(db, 'users', uid, 'garden', id), {
       lastFertilized: Timestamp.fromDate(today),
@@ -68,5 +85,5 @@ export function useGarden(uid) {
     await updateDoc(doc(db, 'users', uid, 'garden', id), { removedAt: Timestamp.fromDate(new Date()) })
   }
 
-  return { plants, loading, addPlant, markWatered, markFertilized, updateNote, updatePhoto, removePlant }
+  return { plants, loading, addPlant, markWatered, markFertilized, updateNote, updatePhoto, removePlant, assignToBed, unassignFromBed }
 }

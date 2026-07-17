@@ -1,8 +1,10 @@
 import { Droplets, LogOut, X } from 'lucide-react'
+import { toDateStr } from '../../lib/garden'
 
 function waterLabel(entry, today) {
-  if (entry.nextWatering <= today) return { text: 'Чака поливане!', color: '#C97D0E' }
-  const days = Math.round((new Date(entry.nextWatering) - new Date(today)) / 86400000)
+  const next = toDateStr(entry.nextWatering)
+  if (next <= today) return { text: 'Чака поливане!', color: '#C97D0E' }
+  const days = Math.round((new Date(next) - new Date(today)) / 86400000)
   return { text: days === 1 ? 'Поливане утре' : `Поливане след ${days} дни`, color: '#6A9E78' }
 }
 
@@ -29,12 +31,12 @@ export default function PlantSheet({ entry, bedName, today, onWater, onUnassign,
         <p className="text-sm mb-4 font-medium" style={{ color: status.color }}>{status.text}</p>
 
         <div className="flex gap-2">
-          <button onClick={() => onWater(entry.uid)}
+          <button onClick={() => onWater(entry.id)}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5"
             style={{ background: '#3B82F6', color: '#fff' }}>
             <Droplets size={15} /> Полей
           </button>
-          <button onClick={() => onUnassign(entry.uid)}
+          <button onClick={() => onUnassign(entry.id)}
             className="flex-1 py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5"
             style={{ background: '#F5F2EC', color: '#1C2B23' }}>
             <LogOut size={15} /> Извади от лехата
