@@ -1,8 +1,22 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
     match /users/{uid} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      // admins may list and read all profiles; users only their own
+      allow read: if request.auth != null && (request.auth.uid == uid || isAdmin());
+      // new profiles always start as free
+      allow create: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.role == 'free';
+      // users may update their own profile but never their role; admins may change roles
+      allow update: if request.auth != null && (
+        (request.auth.uid == uid && request.resource.data.role == resource.data.role)
+        || isAdmin()
+      );
 
       match /garden/{entryId} {
         allow read, write: if request.auth != null && request.auth.uid == uid;

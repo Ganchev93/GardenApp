@@ -10,6 +10,7 @@ import Analyze from './pages/Analyze'
 import Chat from './pages/Chat'
 import Calendar from './pages/Calendar'
 import Profile from './pages/Profile'
+import Admin from './pages/Admin'
 import './index.css'
 
 function ProtectedApp() {
@@ -35,6 +36,7 @@ function ProtectedApp() {
         <Route path="/analyze" element={<Analyze />} />
         <Route path="/chat" element={<Chat />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/admin" element={<Admin />} />
       </Routes>
     </AppLayout>
   )
