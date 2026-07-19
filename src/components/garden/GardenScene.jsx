@@ -98,7 +98,7 @@ export default function GardenScene({
   yard, paths, decor, onYardChange, onPathsChange, onDecorChange,
   canAddBed, canAddPlant,
   onAddBed, onMoveBed, onRemoveBed,
-  onPlantNew, onAssign, onUnassign, onWater, onAddPhoto,
+  onPlantNew, onAssign, onUnassign, onWater, onAddPhoto, onRemovePhoto,
 }) {
   const wrapRef = useRef(null)
   const svgRef = useRef(null)
@@ -894,7 +894,7 @@ export default function GardenScene({
           today={today}
           onWater={handleWater}
           onUnassign={id => { onUnassign(id); setSheet(null) }}
-          onAddPhoto={onAddPhoto}
+          onAddPhoto={onAddPhoto} onRemovePhoto={onRemovePhoto}
           onClose={() => setSheet(null)} />
       )}
     </div>

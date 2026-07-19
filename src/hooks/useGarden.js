@@ -88,10 +88,21 @@ export function useGarden(uid) {
     })
   }
 
+  async function removePhoto(id, uploadedAt) {
+    const plant = plants.find(p => p.id === id)
+    if (!plant) return
+    const remaining = (plant.photos || []).filter(ph => ph.uploadedAt !== uploadedAt)
+    const newest = [...remaining].sort((a, b) => (a.uploadedAt < b.uploadedAt ? 1 : -1))[0]
+    await updateDoc(doc(db, 'users', uid, 'garden', id), {
+      photos: remaining,
+      photo: newest ? newest.url : null,
+    })
+  }
+
   async function removePlant(id) {
     // soft delete — пази историята на зоната за сеитбооборот (v2)
     await updateDoc(doc(db, 'users', uid, 'garden', id), { removedAt: Timestamp.fromDate(new Date()) })
   }
 
-  return { plants, loading, addPlant, markWatered, markFertilized, updateNote, updatePhoto, addPhoto, removePlant, assignToBed, unassignFromBed }
+  return { plants, loading, addPlant, markWatered, markFertilized, updateNote, updatePhoto, addPhoto, removePhoto, removePlant, assignToBed, unassignFromBed }
 }

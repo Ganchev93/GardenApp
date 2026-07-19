@@ -17,7 +17,7 @@ function waterLabel(entry, today) {
 }
 
 // Bottom sheet: actions + photo journal for a planted entry.
-export default function PlantSheet({ entry, bedName, today, onWater, onUnassign, onAddPhoto, onClose }) {
+export default function PlantSheet({ entry, bedName, today, onWater, onUnassign, onAddPhoto, onRemovePhoto, onClose }) {
   const [uploading, setUploading] = useState(false)
   const [photoError, setPhotoError] = useState(null)
   const [viewerIdx, setViewerIdx] = useState(null)
@@ -53,6 +53,11 @@ export default function PlantSheet({ entry, bedName, today, onWater, onUnassign,
         <div className="fixed inset-0 z-60 flex flex-col items-center justify-center p-4"
           style={{ background: 'rgba(10,16,12,0.93)' }}
           onClick={e => { e.stopPropagation(); setViewerIdx(null) }}>
+          <button onClick={e => { e.stopPropagation(); setViewerIdx(null) }} aria-label="Назад"
+            className="absolute top-4 right-4 w-10 h-10 rounded-full flex items-center justify-center"
+            style={{ background: 'rgba(255,255,255,0.12)', color: '#fff' }}>
+            <X size={20} />
+          </button>
           <img src={photos[viewerIdx].url} alt={entry.name}
             className="max-w-full max-h-[78vh] rounded-2xl object-contain"
             onClick={e => e.stopPropagation()} />
@@ -104,13 +109,20 @@ export default function PlantSheet({ entry, bedName, today, onWater, onUnassign,
               onChange={handleFile} disabled={uploading} />
           </label>
           {photos.map((ph, i) => (
-            <button key={ph.uploadedAt + i} onClick={() => setViewerIdx(i)} className="shrink-0 text-center">
-              <img src={ph.url} alt="" width="64" height="64"
-                className="w-16 h-16 rounded-xl object-cover" />
-              <span className="block text-[9px] mt-0.5" style={{ color: '#9CA3AF' }}>
-                {photoLabel(ph.uploadedAt)}
-              </span>
-            </button>
+            <div key={ph.uploadedAt + i} className="relative shrink-0 text-center">
+              <button onClick={() => setViewerIdx(i)}>
+                <img src={ph.url} alt="" width="64" height="64"
+                  className="w-16 h-16 rounded-xl object-cover" />
+                <span className="block text-[9px] mt-0.5" style={{ color: '#9CA3AF' }}>
+                  {photoLabel(ph.uploadedAt)}
+                </span>
+              </button>
+              <button onClick={() => onRemovePhoto(entry.id, ph.uploadedAt)} aria-label="Изтрий снимката"
+                className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center"
+                style={{ background: '#E74C3C', color: '#fff', border: '1.5px solid #fff' }}>
+                <X size={11} strokeWidth={3} />
+              </button>
+            </div>
           ))}
           {photos.length === 0 && !uploading && (
             <div className="flex items-center text-xs px-2" style={{ color: '#B3D9C4' }}>

@@ -71,7 +71,7 @@ export default function MyGarden() {
   const {
     plants: myPlants, loading,
     addPlant, markWatered, markFertilized, updateNote, removePlant,
-    assignToBed, unassignFromBed, addPhoto,
+    assignToBed, unassignFromBed, addPhoto, removePhoto,
   } = useGarden(uid)
   const { zones: beds, loading: zonesLoading, addZone, moveZone, removeZone } = useZones(uid)
   const layout = useLayout(uid)
@@ -178,7 +178,7 @@ export default function MyGarden() {
           canAddBed={canAddBed} canAddPlant={canAddPlant}
           onAddBed={addBed} onMoveBed={moveZone} onRemoveBed={removeBed}
           onPlantNew={plantNew} onAssign={assignToBed} onUnassign={unassignFromBed}
-          onWater={waterById} onAddPhoto={photoUpload} />
+          onWater={waterById} onAddPhoto={photoUpload} onRemovePhoto={removePhoto} />
       )}
 
       {viewMode === 'list' && (<>
