@@ -9,6 +9,7 @@ import MyGarden from './pages/MyGarden'
 import Analyze from './pages/Analyze'
 import Chat from './pages/Chat'
 import Calendar from './pages/Calendar'
+import Journal from './pages/Journal'
 import Profile from './pages/Profile'
 import Admin from './pages/Admin'
 import './index.css'
@@ -32,6 +33,7 @@ function ProtectedApp() {
         <Route path="/" element={<Home />} />
         <Route path="/plants" element={<Plants />} />
         <Route path="/garden" element={<MyGarden />} />
+        <Route path="/journal" element={<Journal />} />
         <Route path="/calendar" element={<Calendar />} />
         <Route path="/analyze" element={<Analyze />} />
         <Route path="/chat" element={<Chat />} />

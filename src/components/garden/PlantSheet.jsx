@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Droplets, LogOut, X, Camera, Loader2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Droplets, LogOut, X, Camera, Loader2, ChevronLeft, ChevronRight, ShoppingBasket } from 'lucide-react'
 import { toDateStr } from '../../lib/garden'
+import HarvestForm from './HarvestForm'
 
 const MONTHS_SHORT = ['яну', 'фев', 'мар', 'апр', 'май', 'юни', 'юли', 'авг', 'сеп', 'окт', 'ное', 'дек']
 
@@ -17,10 +18,13 @@ function waterLabel(entry, today) {
 }
 
 // Bottom sheet: actions + photo journal for a planted entry.
-export default function PlantSheet({ entry, bedName, today, onWater, onUnassign, onAddPhoto, onRemovePhoto, onClose }) {
+export default function PlantSheet({ entry, bedName, today, onWater, onUnassign, onAddPhoto, onRemovePhoto, onHarvest, onClose }) {
   const [uploading, setUploading] = useState(false)
   const [photoError, setPhotoError] = useState(null)
   const [viewerIdx, setViewerIdx] = useState(null)
+  const [harvesting, setHarvesting] = useState(false)
+  const [harvestSaved, setHarvestSaved] = useState(false)
+  const harvestable = ['зеленчук', 'дърво', 'храст'].includes(entry.category)
 
   const status = waterLabel(entry, today)
   const photos = [...(entry.photos || [])].sort((a, b) => (a.uploadedAt < b.uploadedAt ? 1 : -1))
@@ -131,6 +135,34 @@ export default function PlantSheet({ entry, bedName, today, onWater, onUnassign,
           )}
         </div>
         {photoError && <p className="text-xs mb-2" style={{ color: '#C0392B' }}>{photoError}</p>}
+
+        {harvestable && (
+          <div className="flex items-center gap-2 mt-3 rounded-xl px-3 py-2.5"
+            style={{ background: '#F5F2EC' }}>
+            <ShoppingBasket size={15} className="shrink-0" style={{ color: '#6A9E78' }} />
+            {harvesting ? (
+              <HarvestForm
+                onSubmit={(amount, unit) => {
+                  onHarvest(entry.id, amount, unit)
+                  setHarvesting(false)
+                  setHarvestSaved(true)
+                  setTimeout(() => setHarvestSaved(false), 2000)
+                }}
+                onCancel={() => setHarvesting(false)} />
+            ) : (
+              <>
+                <span className="flex-1 text-sm font-medium" style={{ color: harvestSaved ? '#4A7C59' : '#1C2B23' }}>
+                  {harvestSaved ? 'Записано в дневника' : 'Реколта'}
+                </span>
+                <button onClick={() => setHarvesting(true)}
+                  className="text-xs px-3 py-1 rounded-lg font-semibold shrink-0"
+                  style={{ background: '#fff', color: '#6A9E78', border: '1px solid #B3D9C4' }}>
+                  Запиши
+                </button>
+              </>
+            )}
+          </div>
+        )}
 
         <div className="flex gap-2 mt-3">
           <button onClick={() => onWater(entry.id)}

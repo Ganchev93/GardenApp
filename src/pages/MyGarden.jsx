@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Droplets, Sprout, Bug, X, NotebookPen, Plus, CalendarDays, Search, Map, List } from 'lucide-react'
+import { Droplets, Sprout, Bug, X, NotebookPen, Plus, CalendarDays, Search, Map, List, ShoppingBasket } from 'lucide-react'
 import { plants as catalog } from '../data/plants'
 import { ACTIVITIES } from '../components/PlantTimeline'
 import { toDateStr, todayStr } from '../lib/garden'
@@ -8,10 +8,12 @@ import { useGarden } from '../hooks/useGarden'
 import { useZones } from '../hooks/useZones'
 import { useLayout } from '../hooks/useLayout'
 import { useFreemium } from '../hooks/useFreemium'
+import { useHarvests } from '../hooks/useHarvests'
 import { migratePocData } from '../lib/migratePoc'
 import { uploadImage } from '../services/cloudinary'
 import FreemiumGate from '../components/ui/FreemiumGate'
 import GardenScene from '../components/garden/GardenScene'
+import HarvestForm from '../components/garden/HarvestForm'
 import emptyBedImg from '../assets/empty-bed.png'
 
 function dayLabel(days, due) {
@@ -74,6 +76,7 @@ export default function MyGarden() {
     assignToBed, unassignFromBed, addPhoto, removePhoto,
   } = useGarden(uid)
   const { zones: beds, loading: zonesLoading, addZone, moveZone, removeZone } = useZones(uid)
+  const { addHarvest } = useHarvests(uid)
   const layout = useLayout(uid)
   const { canAddPlant, role } = useFreemium()
   const canAddBed = role !== 'free' || beds.length < 1
@@ -124,6 +127,10 @@ export default function MyGarden() {
   async function photoUpload(id, file) {
     const url = await uploadImage(file)
     await addPhoto(id, url)
+  }
+  function harvestById(id, amount, unit) {
+    const p = myPlants.find(p => p.id === id)
+    if (p) addHarvest({ gardenEntryId: p.id, plantId: p.plantId, name: p.name, emoji: p.emoji, amount, unit })
   }
 
   const isDue = p => toDateStr(p.nextWatering) <= today || (p.nextFertilizing && toDateStr(p.nextFertilizing) <= today)
@@ -178,7 +185,7 @@ export default function MyGarden() {
           canAddBed={canAddBed} canAddPlant={canAddPlant}
           onAddBed={addBed} onMoveBed={moveZone} onRemoveBed={removeBed}
           onPlantNew={plantNew} onAssign={assignToBed} onUnassign={unassignFromBed}
-          onWater={waterById} onAddPhoto={photoUpload} onRemovePhoto={removePhoto} />
+          onWater={waterById} onAddPhoto={photoUpload} onRemovePhoto={removePhoto} onHarvest={harvestById} />
       )}
 
       {viewMode === 'list' && (<>
@@ -260,7 +267,8 @@ export default function MyGarden() {
             onMarkFertilized={() => markFertilized(p.id, p.fertilizing_frequency_days)}
             onRemove={() => removePlant(p.id)}
             onPhotoView={setPhotoView}
-            onNote={note => updateNote(p.id, note)} />
+            onNote={note => updateNote(p.id, note)}
+            onHarvest={(amount, unit) => harvestById(p.id, amount, unit)} />
         ))}
       </div>
       </>)}
@@ -268,9 +276,12 @@ export default function MyGarden() {
   )
 }
 
-function PlantCard({ plant, today, onMarkWatered, onMarkFertilized, onRemove, onPhotoView, onNote }) {
+function PlantCard({ plant, today, onMarkWatered, onMarkFertilized, onRemove, onPhotoView, onNote, onHarvest }) {
   const [editingNote, setEditingNote] = useState(false)
   const [noteVal, setNoteVal] = useState(plant.note || '')
+  const [harvesting, setHarvesting] = useState(false)
+  const [harvestSaved, setHarvestSaved] = useState(false)
+  const harvestable = plant.category === 'зеленчук' || plant.category === 'дърво' || plant.category === 'храст'
 
   const nextWatering = toDateStr(plant.nextWatering)
   const nextFertilizing = toDateStr(plant.nextFertilizing)
@@ -356,6 +367,34 @@ function PlantCard({ plant, today, onMarkWatered, onMarkFertilized, onRemove, on
           </button>
         )}
       </div>
+
+      {/* Реколта */}
+      {harvestable && (
+        <div className="flex items-center gap-3 px-4 py-2.5">
+          <ShoppingBasket size={16} className="shrink-0" style={{ color: '#B3D9C4' }} />
+          {harvesting ? (
+            <HarvestForm
+              onSubmit={(amount, unit) => {
+                onHarvest(amount, unit)
+                setHarvesting(false)
+                setHarvestSaved(true)
+                setTimeout(() => setHarvestSaved(false), 2000)
+              }}
+              onCancel={() => setHarvesting(false)} />
+          ) : (
+            <>
+              <span className="flex-1 text-sm font-medium" style={{ color: harvestSaved ? '#4A7C59' : '#1C2B23' }}>
+                {harvestSaved ? 'Записано в дневника' : 'Реколта'}
+              </span>
+              <button onClick={() => setHarvesting(true)}
+                className="text-xs px-3 py-1 rounded-lg font-semibold shrink-0 transition-transform active:scale-90"
+                style={{ background: '#EDE8DF', color: '#6A9E78' }}>
+                Запиши
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Вредители */}
       {pests.length > 0 && (
